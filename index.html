@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#1C1B1F">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Presupuesto Pro</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -14,10 +12,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
 
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #1C1B1F; color: #E6E1E5; }
+        body { font-family: 'Inter', sans-serif; background-color: #1C1B1F; color: #E6E1E5; scroll-behavior: smooth; }
         .md3-card { background-color: #2B2930; border-radius: 1.5rem; }
-        .md3-input { background-color: #4A4458; color: #E6E1E5; border-radius: 0.5rem; border: 1px solid transparent; transition: all 0.2s; }
-        .md3-input:focus { border-color: #D0BCFF; outline: none; background-color: #36343B; }
+        .md3-input { background-color: #4A4458; color: #E6E1E5; border-radius: 0.5rem; border: 1px solid transparent; outline: none; transition: all 0.2s; padding: 0.5rem; width: 100%; text-align: right; font-family: monospace; font-size: 1.1rem; }
+        .md3-input:focus { border-color: #D0BCFF; background-color: #36343B; }
         .md3-checkbox { appearance: none; width: 1.25rem; height: 1.25rem; border: 2px solid #CAC4D0; border-radius: 0.25rem; cursor: pointer; position: relative; transition: all 0.2s; }
         .md3-checkbox:checked { background-color: #D0BCFF; border-color: #D0BCFF; }
         .md3-checkbox:checked::after { content: ''; position: absolute; left: 6px; top: 2px; width: 5px; height: 10px; border: solid #381E72; border-width: 0 2px 2px 0; transform: rotate(45deg); }
@@ -26,8 +24,10 @@
         .tab-btn { flex: 1; padding: 0.75rem; text-align: center; font-size: 0.875rem; font-weight: 600; border-radius: 0.5rem; transition: all 0.2s; color: #CAC4D0; }
         .tab-active { background-color: #4A4458; color: #D0BCFF; }
 
-        .fab { position: fixed; bottom: 1.5rem; right: 1.5rem; background-color: #D0BCFF; color: #381E72; width: 3.5rem; height: 3.5rem; border-radius: 1rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 8px 3px rgba(0,0,0,0.15); cursor: pointer; transition: transform 0.2s; z-index: 50; }
-        .fab:active { transform: scale(0.95); }
+        .fab-main { position: fixed; bottom: 1.5rem; right: 1.5rem; background-color: #D0BCFF; color: #381E72; width: 3.5rem; height: 3.5rem; border-radius: 1rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 8px 3px rgba(0,0,0,0.15); cursor: pointer; z-index: 50; }
+        .fab-up { position: fixed; bottom: 5.5rem; right: 1.5rem; background-color: #36343B; color: #CAC4D0; width: 2.5rem; height: 2.5rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.2); cursor: pointer; z-index: 40; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+        .fab-up.visible { opacity: 1; pointer-events: auto; }
+        
         .spinner { animation: spin 1s linear infinite; display: none; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
 
@@ -35,92 +35,135 @@
         #snackbar.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
         @keyframes fadein { from { bottom: 0; opacity: 0; } to { bottom: 30px; opacity: 1; } }
         @keyframes fadeout { from { bottom: 30px; opacity: 1; } to { bottom: 0; opacity: 0; } }
+        
+        /* Toggle Switch para Pendientes */
+        .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #4A4458; transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: #E6E1E5; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #D0BCFF; }
+        input:checked + .slider:before { transform: translateX(20px); background-color: #381E72; }
     </style>
 </head>
 <body class="pb-24 p-4 md:p-8 max-w-lg mx-auto md:max-w-4xl">
 
-    <header class="mb-6">
+    <header class="mb-4">
         <h1 class="text-2xl font-bold mb-4 flex items-center gap-2 text-[#D0BCFF]">
-            <span class="material-symbols-outlined">account_balance_wallet</span> Gestor de Presupuesto
+            <span class="material-symbols-outlined">account_balance_wallet</span> Presupuesto Pro
         </h1>
-        <input type="text" id="budget-name" placeholder="Nombre (ej. Quincena 1)" class="md3-input w-full p-4 text-lg font-medium" value="Quincena Actual">
+        <input type="text" id="budget-name" placeholder="Nombre (ej. Quincena 1)" class="w-full p-4 text-lg font-medium bg-[#4A4458] text-[#E6E1E5] rounded-xl border-none outline-none focus:ring-2 focus:ring-[#D0BCFF]" value="Quincena Actual">
     </header>
 
     <div class="flex bg-[#36343B] rounded-xl p-1 mb-6 border border-[#4A4458]">
-        <button onclick="switchTab('super')" id="tab-super" class="tab-btn tab-active">🛒 Súper / Casa</button>
-        <button onclick="switchTab('general')" id="tab-general" class="tab-btn">💳 Gastos Generales</button>
+        <button onclick="switchTab('super')" id="tab-super" class="tab-btn tab-active">🛒 Súper/Casa</button>
+        <button onclick="switchTab('general')" id="tab-general" class="tab-btn">💳 Generales</button>
+        <button onclick="switchTab('historial')" id="tab-historial" class="tab-btn">📊 Historial</button>
     </div>
 
-    <div class="md3-card p-6 mb-6 text-center border border-[#4A4458]">
-        <p class="text-xs text-[#CAC4D0] uppercase font-semibold tracking-widest">Gasto Real Global</p>
-        <p id="sum-total-real" class="text-4xl font-bold text-[#D0BCFF] font-mono mt-2">Q 0.00</p>
-        <div class="flex justify-center items-center gap-4 mt-3 text-sm">
-            <span class="text-[#938F99]">Presup: <span id="sum-total-presup">Q 0.00</span></span>
-            <span id="diff-total" class="font-bold px-2 py-1 rounded-md bg-[#1C1B1F]">Q 0.00</span>
+    <div id="view-active">
+        <div class="md3-card p-5 mb-6 border border-[#4A4458]">
+            <div class="flex justify-between items-center border-b border-[#4A4458] pb-3 mb-3">
+                <h3 class="text-sm font-semibold text-[#CAC4D0] uppercase tracking-wide">Liquidez Quincenal</h3>
+                <div class="text-right">
+                    <p class="text-[10px] text-[#938F99] uppercase">Saldo Disponible</p>
+                    <p id="saldo-disponible" class="text-2xl font-bold text-[#86EFAC] font-mono">Q 0.00</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="text-xs text-[#CAC4D0] block mb-1">Sueldo Andrés</label>
+                    <input type="number" id="ingreso-andres" step="0.01" class="md3-input" onchange="updateIncome()">
+                </div>
+                <div>
+                    <label class="text-xs text-[#CAC4D0] block mb-1">Sueldo Adriana</label>
+                    <input type="number" id="ingreso-adriana" step="0.01" class="md3-input" onchange="updateIncome()">
+                </div>
+            </div>
         </div>
-    </div>
 
-    <div class="md3-card p-6 flex flex-col items-center justify-center mb-6">
-        <h2 id="chart-title" class="text-sm font-semibold text-[#CAC4D0] mb-2 uppercase tracking-wide">Distribución de Vista Actual</h2>
-        <div class="w-48 h-48 relative">
-            <canvas id="expenseChart"></canvas>
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="md3-card p-4 border border-[#4A4458]">
+                <p class="text-[10px] text-[#CAC4D0] uppercase font-semibold">Total Gasto Real</p>
+                <p id="sum-total-real" class="text-xl font-bold text-[#D0BCFF] font-mono mt-1">Q 0.00</p>
+            </div>
+            <div class="md3-card p-4 border border-[#4A4458] flex justify-between items-center">
+                <p class="text-xs text-[#CAC4D0] font-semibold">Ocultar<br>Comprados</p>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="toggle-pendientes" onchange="renderLists()">
+                    <span class="slider"></span>
+                </label>
+            </div>
         </div>
+
+        <div id="lists-container" class="space-y-6 mb-8"></div>
+
+        <button onclick="cerrarQuincena()" class="w-full bg-[#381E72] hover:bg-[#4A4458] text-[#D0BCFF] font-bold py-4 rounded-xl border border-[#D0BCFF] transition-colors flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined">inventory_2</span> CERRAR Y GUARDAR QUINCENA
+        </button>
     </div>
 
-    <div id="lists-container" class="space-y-6"></div>
+    <div id="view-historial" class="hidden">
+        <div class="md3-card p-6 border border-[#4A4458] text-center mb-6">
+            <span class="material-symbols-outlined text-4xl text-[#D0BCFF] mb-2">history</span>
+            <h2 class="text-xl font-bold text-[#E6E1E5]">Historial de Quincenas</h2>
+            <p class="text-sm text-[#938F99] mt-2">Aquí verás el resumen de las quincenas que has cerrado.</p>
+        </div>
+        <div id="historial-container" class="space-y-4"></div>
+    </div>
 
-    <button id="fab-sync" class="fab" onclick="syncData()">
+    <button id="fab-up" class="fab-up" onclick="window.scrollTo(0,0)">
+        <span class="material-symbols-outlined">arrow_upward</span>
+    </button>
+
+    <button id="fab-sync" class="fab-main" onclick="syncData()">
         <span id="fab-icon" class="material-symbols-outlined text-3xl">cloud_sync</span>
         <span id="fab-spinner" class="material-symbols-outlined text-3xl spinner">progress_activity</span>
     </button>
 
-    <div id="snackbar">Sincronizado correctamente</div>
+    <div id="snackbar">Acción completada</div>
 
     <script>
-        // CONFIGURACIÓN: Reemplaza esta URL por tu enlace de Apps Script
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby6wy-vP9t-C1iQldvJwC-qDfeL-04u-663-QrQN-r2QgQxeEJaMeCsxoyQAe3TUCu_/exec';
+        // CONFIGURACIÓN: Pega tu URL de Apps Script aquí
+        const GOOGLE_SCRIPT_URL = 'PEGAR_AQUI_TU_ENLACE';
 
         const defaultData = {
-            // PESTAÑA 1: Súper y Casa
-            insumos: [
-                { id: "i1", nombre: "Shampoo / Acondicionador", budget: 140.00, actual: 140.00, checked: false },
-                { id: "i3", nombre: "Pasta dental", budget: 100.00, actual: 100.00, checked: false },
-                { id: "i5", nombre: "Jabón de Cuerpo / Manos", budget: 51.00, actual: 51.00, checked: false },
-                { id: "i7", nombre: "Desodorantes", budget: 140.00, actual: 140.00, checked: false },
-                { id: "i9", nombre: "Rasuradoras", budget: 30.00, actual: 30.00, checked: false },
-                { id: "i11", nombre: "Toallitas Varias", budget: 40.50, actual: 40.50, checked: false }
-            ],
-            comida: [
-                { id: "c1", nombre: "Queso Crema / Yogurt", budget: 106.00, actual: 106.00, checked: false },
-                { id: "c3", nombre: "Avena / Granola", budget: 29.45, actual: 29.45, checked: false },
-                { id: "c5", nombre: "Pan Sandwich", budget: 21.00, actual: 21.00, checked: false },
-                { id: "c6", nombre: "Leche", budget: 24.00, actual: 24.00, checked: false }
-            ],
-            casa: [
-                { id: "h1", nombre: "Papel de Baño", budget: 34.00, actual: 34.00, checked: false },
-                { id: "h2", nombre: "Jabón Ropa / Suavitel", budget: 34.00, actual: 34.00, checked: false },
-                { id: "h4", nombre: "Aceite", budget: 15.00, actual: 15.00, checked: false }
-            ],
-            
-            // PESTAÑA 2: Gastos Generales
-            servicios: [
-                { id: "s1", nombre: "Internet Residencial", budget: 250.00, actual: 250.00, checked: false },
-                { id: "s2", nombre: "Plan Celular", budget: 150.00, actual: 150.00, checked: false }
-            ],
-            transporte: [
-                { id: "t1", nombre: "Gasolina (Moto)", budget: 150.00, actual: 150.00, checked: false },
-                { id: "t2", nombre: "Parqueo / Peajes", budget: 50.00, actual: 50.00, checked: false }
-            ],
-            compromisos: [
-                { id: "g1", nombre: "Cuota Apartamento", budget: 1000.00, actual: 1000.00, checked: false },
-                { id: "g2", nombre: "Fondo Viaje / Fin de semana", budget: 400.00, actual: 400.00, checked: false },
-                { id: "g3", nombre: "Universidad", budget: 200.00, actual: 200.00, checked: false }
-            ]
-        };
-
-        const tabConfig = {
-            super: ['insumos', 'comida', 'casa'],
-            general: ['servicios', 'transporte', 'compromisos']
+            ingresos: { andres: 0, adriana: 0 },
+            super: {
+                insumos: [
+                    { id: "i1", nombre: "Shampoo / Acondicionador", budget: 140.00, actual: 0.00, checked: false },
+                    { id: "i3", nombre: "Pasta dental", budget: 100.00, actual: 0.00, checked: false },
+                    { id: "i5", nombre: "Jabón de Cuerpo / Manos", budget: 51.00, actual: 0.00, checked: false },
+                    { id: "i7", nombre: "Desodorantes", budget: 140.00, actual: 0.00, checked: false },
+                    { id: "i9", nombre: "Rasuradoras", budget: 30.00, actual: 0.00, checked: false },
+                    { id: "i11", nombre: "Toallitas Varias", budget: 40.50, actual: 0.00, checked: false }
+                ],
+                comida: [
+                    { id: "c1", nombre: "Queso Crema / Yogurt", budget: 106.00, actual: 0.00, checked: false },
+                    { id: "c3", nombre: "Avena / Granola", budget: 29.45, actual: 0.00, checked: false },
+                    { id: "c5", nombre: "Pan Sandwich", budget: 21.00, actual: 0.00, checked: false },
+                    { id: "c6", nombre: "Leche", budget: 24.00, actual: 0.00, checked: false }
+                ],
+                casa: [
+                    { id: "h1", nombre: "Papel de Baño", budget: 34.00, actual: 0.00, checked: false },
+                    { id: "h2", nombre: "Jabón Ropa / Suavitel", budget: 34.00, actual: 0.00, checked: false },
+                    { id: "h4", nombre: "Aceite", budget: 15.00, actual: 0.00, checked: false }
+                ]
+            },
+            general: {
+                servicios: [
+                    { id: "s1", nombre: "Internet Residencial", budget: 250.00, actual: 0.00, checked: false },
+                    { id: "s2", nombre: "Plan Celular", budget: 150.00, actual: 0.00, checked: false }
+                ],
+                transporte: [
+                    { id: "t1", nombre: "Gasolina (Moto)", budget: 150.00, actual: 0.00, checked: false },
+                    { id: "t2", nombre: "Parqueo / Peajes", budget: 50.00, actual: 0.00, checked: false }
+                ],
+                compromisos: [
+                    { id: "g1", nombre: "Cuota Apartamento", budget: 1000.00, actual: 0.00, checked: false },
+                    { id: "g2", nombre: "Fondo Viaje / Recreación", budget: 400.00, actual: 0.00, checked: false },
+                    { id: "g3", nombre: "Universidad", budget: 200.00, actual: 0.00, checked: false }
+                ]
+            }
         };
 
         const categoryStyles = {
@@ -132,149 +175,234 @@
             compromisos: { title: 'Compromisos / Ahorros', icon: 'account_balance', color: '#6EE7B7' }
         };
 
-        let appData = JSON.parse(localStorage.getItem('budgetAppData_v2')) || defaultData;
-        let chartInstance = null;
+        let appData = JSON.parse(localStorage.getItem('budgetAppData_v3')) || defaultData;
+        let historyData = JSON.parse(localStorage.getItem('budgetHistory_v1')) || [];
         let activeTab = 'super';
 
+        // Inicializar inputs de ingresos
+        document.getElementById('ingreso-andres').value = appData.ingresos?.andres || 0;
+        document.getElementById('ingreso-adriana').value = appData.ingresos?.adriana || 0;
+
         function saveLocal() {
-            localStorage.setItem('budgetAppData_v2', JSON.stringify(appData));
-            updateUI();
+            localStorage.setItem('budgetAppData_v3', JSON.stringify(appData));
+            localStorage.setItem('budgetHistory_v1', JSON.stringify(historyData));
+            updateLogic();
         }
 
-        function formatQ(val) { return `Q ${Math.abs(val).toFixed(2)}`; }
+        function formatQ(val) { return `Q ${parseFloat(val).toFixed(2)}`; }
 
         function switchTab(tabName) {
             activeTab = tabName;
             document.getElementById('tab-super').classList.toggle('tab-active', tabName === 'super');
             document.getElementById('tab-general').classList.toggle('tab-active', tabName === 'general');
-            renderLists();
-            updateUI();
-        }
-
-        function updateUI() {
-            let globalB = 0, globalA = 0;
-            let chartLabels = [], chartData = [], chartColors = [];
-
-            // Calcular el gran total global
-            Object.keys(appData).forEach(cat => {
-                let catB = 0, catA = 0;
-                appData[cat].forEach(item => { catB += item.budget; catA += item.actual; });
-                globalB += catB;
-                globalA += catA;
-
-                // Extraer datos solo para el gráfico de la pestaña activa
-                if (tabConfig[activeTab].includes(cat)) {
-                    chartLabels.push(categoryStyles[cat].title);
-                    chartData.push(catA);
-                    chartColors.push(categoryStyles[cat].color);
-                }
-            });
-
-            // Actualizar interfaz Global
-            document.getElementById('sum-total-real').textContent = formatQ(globalA);
-            document.getElementById('sum-total-presup').textContent = formatQ(globalB);
+            document.getElementById('tab-historial').classList.toggle('tab-active', tabName === 'historial');
             
-            const diffGlobal = globalB - globalA;
-            const diffEl = document.getElementById('diff-total');
-            diffEl.textContent = (diffGlobal >= 0 ? '+' : '-') + formatQ(diffGlobal);
-            diffEl.className = `font-bold px-2 py-1 rounded-md bg-[#1C1B1F] ${diffGlobal >= 0 ? 'text-[#81C995]' : 'text-[#F2B8B5]'}`;
-
-            updateChart(chartLabels, chartData, chartColors);
-        }
-
-        function initChart() {
-            const ctx = document.getElementById('expenseChart').getContext('2d');
-            chartInstance = new Chart(ctx, {
-                type: 'doughnut',
-                data: { labels: [], datasets: [{ data: [], backgroundColor: [], borderWidth: 0, hoverOffset: 4 }] },
-                options: {
-                    responsive: true, maintainAspectRatio: false, cutout: '75%',
-                    plugins: { legend: { display: false }, tooltip: { backgroundColor: '#313033', titleColor: '#E6E1E5', bodyColor: '#E6E1E5' } }
-                }
-            });
-        }
-
-        function updateChart(labels, dataArray, colors) {
-            if(chartInstance) {
-                chartInstance.data.labels = labels;
-                chartInstance.data.datasets[0].data = dataArray;
-                chartInstance.data.datasets[0].backgroundColor = colors;
-                chartInstance.update();
+            if(tabName === 'historial') {
+                document.getElementById('view-active').classList.add('hidden');
+                document.getElementById('view-historial').classList.remove('hidden');
+                document.getElementById('fab-sync').style.display = 'none';
+                renderHistorial();
+            } else {
+                document.getElementById('view-active').classList.remove('hidden');
+                document.getElementById('view-historial').classList.add('hidden');
+                document.getElementById('fab-sync').style.display = 'flex';
+                renderLists();
             }
+            updateLogic();
+        }
+
+        function updateIncome() {
+            if(!appData.ingresos) appData.ingresos = { andres: 0, adriana: 0 };
+            appData.ingresos.andres = parseFloat(document.getElementById('ingreso-andres').value) || 0;
+            appData.ingresos.adriana = parseFloat(document.getElementById('ingreso-adriana').value) || 0;
+            saveLocal();
+        }
+
+        function updateLogic() {
+            let totalReal = 0;
+            // Sumar todos los gastos de todas las pestañas
+            ['super', 'general'].forEach(vista => {
+                Object.keys(appData[vista]).forEach(cat => {
+                    appData[vista][cat].forEach(item => totalReal += item.actual);
+                });
+            });
+
+            const totalIngresos = (appData.ingresos?.andres || 0) + (appData.ingresos?.adriana || 0);
+            const saldo = totalIngresos - totalReal;
+
+            document.getElementById('sum-total-real').textContent = formatQ(totalReal);
+            const saldoEl = document.getElementById('saldo-disponible');
+            saldoEl.textContent = formatQ(saldo);
+            saldoEl.className = `text-2xl font-bold font-mono ${saldo >= 0 ? 'text-[#86EFAC]' : 'text-[#F87171]'}`;
         }
 
         function renderLists() {
             const container = document.getElementById('lists-container');
             container.innerHTML = '';
-            const categoriesToShow = tabConfig[activeTab];
+            const hideBought = document.getElementById('toggle-pendientes').checked;
+            
+            // Si la vista no existe (ej. cambio de estructura), usar default
+            if(!appData[activeTab]) return;
 
-            categoriesToShow.forEach(cat => {
+            Object.keys(appData[activeTab]).forEach(cat => {
                 const conf = categoryStyles[cat];
-                let catA = 0;
-                appData[cat].forEach(item => catA += item.actual);
-
-                let html = `
+                let catHTML = `
                 <div class="md3-card overflow-hidden">
                     <div class="p-4 flex items-center justify-between border-b border-[#4A4458] bg-[#36343B]">
                         <div class="flex items-center gap-2">
                             <span class="material-symbols-outlined" style="color: ${conf.color}">${conf.icon}</span>
                             <h3 class="font-semibold text-[#E6E1E5]">${conf.title}</h3>
                         </div>
-                        <span class="text-sm font-bold font-mono text-[#D0BCFF]">${formatQ(catA)}</span>
                     </div>
                     <div class="p-2 space-y-1">`;
                 
-                appData[cat].forEach((item, index) => {
-                    html += `
+                let hasItems = false;
+                appData[activeTab][cat].forEach((item, index) => {
+                    if (hideBought && item.checked) return; // Filtrar comprados
+                    hasItems = true;
+                    catHTML += `
                         <div class="flex items-center gap-3 p-3 bg-[#1C1B1F] rounded-xl">
                             <input type="checkbox" class="md3-checkbox shrink-0" ${item.checked ? 'checked' : ''} 
-                                onchange="toggleCheck('${cat}', ${index})">
+                                onchange="toggleCheck('${activeTab}', '${cat}', ${index})">
                             <div class="flex-1 min-w-0">
                                 <p class="text-sm font-medium truncate ${item.checked ? 'item-checked' : ''}">${item.nombre}</p>
                                 <p class="text-[10px] text-[#CAC4D0]">Presupuesto: ${formatQ(item.budget)}</p>
                             </div>
-                            <div class="flex items-center bg-[#36343B] rounded-lg p-1 border border-[#4A4458]">
-                                <span class="text-xs text-[#CAC4D0] ml-2">Q</span>
-                                <input type="number" step="0.01" value="${item.actual.toFixed(2)}" 
-                                    class="w-16 bg-transparent text-right text-sm font-bold text-[#D0BCFF] outline-none p-1"
-                                    onchange="updateActual('${cat}', ${index}, this.value)">
+                            <div class="flex flex-col w-20">
+                                <input type="number" step="0.01" value="${item.actual === 0 ? '' : item.actual}" placeholder="0.00"
+                                    class="md3-input p-1" onchange="updateActual('${activeTab}', '${cat}', ${index}, this.value)">
                             </div>
                         </div>`;
                 });
                 
-                html += `</div></div>`;
-                container.innerHTML += html;
+                catHTML += `</div></div>`;
+                if(hasItems) container.innerHTML += catHTML;
+            });
+
+            if(container.innerHTML === '') {
+                container.innerHTML = `<p class="text-center text-[#938F99] mt-8">No hay artículos pendientes.</p>`;
+            }
+        }
+
+        function toggleCheck(vista, cat, index) { 
+            appData[vista][cat][index].checked = !appData[vista][cat][index].checked; 
+            saveLocal(); renderLists(); 
+        }
+        function updateActual(vista, cat, index, value) { 
+            let val = parseFloat(value);
+            appData[vista][cat][index].actual = isNaN(val) ? 0 : val;
+            // Si agrega valor, marcar check automático por UX
+            if(appData[vista][cat][index].actual > 0) appData[vista][cat][index].checked = true;
+            if(appData[vista][cat][index].actual === 0) appData[vista][cat][index].checked = false;
+            saveLocal(); renderLists(); 
+        }
+
+        function cerrarQuincena() {
+            if(!confirm("¿Seguro que deseas Cerrar la Quincena?\nEsto guardará los totales en el historial y pondrá a cero los valores reales para que puedas iniciar de nuevo, manteniendo tus presupuestos.")) return;
+
+            let totalS = 0, totalG = 0;
+            Object.keys(appData.super).forEach(c => appData.super[c].forEach(i => totalS += i.actual));
+            Object.keys(appData.general).forEach(c => appData.general[c].forEach(i => totalG += i.actual));
+            const totalIngresos = (appData.ingresos?.andres || 0) + (appData.ingresos?.adriana || 0);
+
+            const record = {
+                id: Date.now(),
+                fecha: new Date().toLocaleDateString('es-GT'),
+                nombre: document.getElementById('budget-name').value || 'Quincena',
+                ingresos: totalIngresos,
+                gastos: totalS + totalG,
+                ahorro: totalIngresos - (totalS + totalG)
+            };
+
+            historyData.unshift(record); // Agregar al inicio
+
+            // Reiniciar Valores Reales y Checks, mantener presupuesto
+            ['super', 'general'].forEach(v => {
+                Object.keys(appData[v]).forEach(c => {
+                    appData[v][c].forEach(item => {
+                        item.actual = 0;
+                        item.checked = false;
+                    });
+                });
+            });
+
+            saveLocal();
+            document.getElementById('toggle-pendientes').checked = false;
+            showSnackbar("Quincena Cerrada y Guardada en Historial");
+            switchTab('historial');
+            syncData(record); // Enviar resumen a Google Sheets
+        }
+
+        function renderHistorial() {
+            const container = document.getElementById('historial-container');
+            container.innerHTML = '';
+            if(historyData.length === 0) {
+                container.innerHTML = `<p class="text-center text-[#938F99]">Aún no hay quincenas cerradas.</p>`;
+                return;
+            }
+
+            historyData.forEach(h => {
+                container.innerHTML += `
+                <div class="md3-card p-4 border border-[#4A4458]">
+                    <div class="flex justify-between items-start border-b border-[#4A4458] pb-2 mb-2">
+                        <div>
+                            <h4 class="font-bold text-[#E6E1E5]">${h.nombre}</h4>
+                            <p class="text-xs text-[#938F99]">${h.fecha}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[10px] text-[#CAC4D0] uppercase">Sobrante</p>
+                            <p class="font-bold ${h.ahorro >= 0 ? 'text-[#86EFAC]' : 'text-[#F87171]'}">${formatQ(h.ahorro)}</p>
+                        </div>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-[#CAC4D0]">Ingresos: ${formatQ(h.ingresos)}</span>
+                        <span class="text-[#F2B8B5]">Gastos: ${formatQ(h.gastos)}</span>
+                    </div>
+                </div>`;
             });
         }
 
-        function toggleCheck(cat, index) { appData[cat][index].checked = !appData[cat][index].checked; saveLocal(); renderLists(); }
-        function updateActual(cat, index, value) { appData[cat][index].actual = parseFloat(value) || 0; saveLocal(); renderLists(); }
-
-        function showSnackbar(msg, isError = false) {
+        function showSnackbar(msg) {
             const sb = document.getElementById("snackbar");
-            sb.textContent = msg;
-            sb.style.backgroundColor = isError ? '#F2B8B5' : '#313033';
-            sb.style.color = isError ? '#601410' : '#F4EFF4';
-            sb.className = "show";
+            sb.textContent = msg; sb.className = "show";
             setTimeout(() => { sb.className = sb.className.replace("show", ""); }, 3000);
         }
 
-        async function syncData() {
-            if(GOOGLE_SCRIPT_URL === 'PEGAR_AQUI_TU_ENLACE') { showSnackbar("Error: Falta la URL de Apps Script", true); return; }
+        // Lógica de botón flotante Scroll Top
+        window.onscroll = function() {
+            const fabUp = document.getElementById('fab-up');
+            if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
+                fabUp.classList.add('visible');
+            } else {
+                fabUp.classList.remove('visible');
+            }
+        };
+
+        async function syncData(cerrarRecord = null) {
+            if(GOOGLE_SCRIPT_URL === 'PEGAR_AQUI_TU_ENLACE') { showSnackbar("Configura la URL de Google"); return; }
             const icon = document.getElementById('fab-icon'), spinner = document.getElementById('fab-spinner');
             icon.style.display = 'none'; spinner.style.display = 'block';
+
+            const payload = {
+                tipo: cerrarRecord ? "cierre" : "sincronizacion",
+                budgetName: document.getElementById('budget-name').value || 'Quincena',
+                data: appData,
+                resumen: cerrarRecord
+            };
 
             try {
                 await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ budgetName: document.getElementById('budget-name').value || 'Sin Nombre', data: appData })
+                    body: JSON.stringify(payload)
                 });
-                showSnackbar("Sincronización completada");
-            } catch (error) { showSnackbar("Error de conexión", true); } 
+                showSnackbar(cerrarRecord ? "Resumen enviado a Sheets" : "Sincronizado con Sheets");
+            } catch (error) { showSnackbar("Error de conexión"); } 
             finally { icon.style.display = 'block'; spinner.style.display = 'none'; }
         }
 
-        document.addEventListener('DOMContentLoaded', () => { initChart(); switchTab('super'); });
+        document.addEventListener('DOMContentLoaded', () => { 
+            switchTab('super'); 
+        });
     </script>
 </body>
 </html>
