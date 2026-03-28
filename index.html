@@ -132,7 +132,7 @@
 
     <script>
         // CONFIGURACIÓN: Pega tu URL de Apps Script aquí
-        const GOOGLE_SCRIPT_URL = 'PEGAR_AQUI_TU_ENLACE';
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby6wy-vP9t-C1iQldvJwC-qDfeL-04u-663-QrQN-r2QgQxeEJaMeCsxoyQAe3TUCu_/exec';
 
         const defaultData = {
             config: { andres: 0, adriana: 0, presupuestoSuper: 900.00 },
@@ -275,19 +275,19 @@
                 appData[activeTab][cat].forEach((item, index) => {
                     if (hideBought && item.checked) return;
                     catHTML += `
-                        <div class="flex items-center gap-3 p-3 bg-[#1C1B1F] rounded-xl relative group">
+                        <div class="flex items-center gap-2 p-3 bg-[#1C1B1F] rounded-xl border border-transparent focus-within:border-[#4A4458] transition-colors">
                             <input type="checkbox" class="md3-checkbox shrink-0" ${item.checked ? 'checked' : ''} 
                                 onchange="toggleCheck('${activeTab}', '${cat}', ${index})">
                             <div class="flex-1 min-w-0">
                                 <p class="text-sm font-medium truncate ${item.checked ? 'item-checked' : ''}">${item.nombre}</p>
                                 <p class="text-[10px] text-[#CAC4D0]">P: ${formatQ(item.budget)}</p>
                             </div>
-                            <div class="flex flex-col w-20">
+                            <div class="flex flex-col w-16">
                                 <input type="number" step="0.01" value="${item.actual === 0 ? '' : item.actual}" placeholder="0.00"
                                     class="md3-input p-1" onchange="updateActual('${activeTab}', '${cat}', ${index}, this.value)">
                             </div>
-                            <button onclick="deleteItem('${activeTab}', '${cat}', ${index})" class="absolute right-0 top-0 h-full px-2 text-[#F2B8B5] bg-[#601410] opacity-0 group-hover:opacity-100 transition-opacity rounded-r-xl">
-                                <span class="material-symbols-outlined text-sm">delete</span>
+                            <button onclick="deleteItem('${activeTab}', '${cat}', ${index})" class="p-2 ml-1 text-[#938F99] hover:text-[#F87171] bg-transparent transition-colors rounded-lg flex items-center justify-center">
+                                <span class="material-symbols-outlined text-[20px]">delete</span>
                             </button>
                         </div>`;
                 });
@@ -331,14 +331,14 @@
         }
 
         function deleteItem(vista, cat, index) {
-            if(confirm("¿Eliminar artículo?")) {
+            if(confirm("¿Estás seguro de que deseas borrar permanentemente este artículo de tu plantilla?")) {
                 appData[vista][cat].splice(index, 1);
                 saveLocal(); renderLists();
             }
         }
 
         function cerrarQuincena() {
-            if(!confirm("¿Seguro que deseas Cerrar la Quincena?")) return;
+            if(!confirm("¿Seguro que deseas Cerrar la Quincena? \n\nTus ingresos y gastos volverán a Q0.00, pero todos los artículos nuevos quedarán guardados en tu plantilla para la siguiente quincena.")) return;
 
             let totalS = 0, totalG = 0;
             Object.keys(appData.super).forEach(c => appData.super[c].forEach(i => totalS += i.actual));
