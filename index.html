@@ -7,15 +7,15 @@
     <title>Presupuesto Pro</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
 
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #1C1B1F; color: #E6E1E5; scroll-behavior: smooth; }
         .md3-card { background-color: #2B2930; border-radius: 1.5rem; }
-        .md3-input { background-color: #4A4458; color: #E6E1E5; border-radius: 0.5rem; border: 1px solid transparent; outline: none; transition: all 0.2s; padding: 0.5rem; width: 100%; text-align: right; font-family: monospace; font-size: 1.1rem; }
+        .md3-input { background-color: #4A4458; color: #E6E1E5; border-radius: 0.5rem; border: 1px solid transparent; outline: none; transition: all 0.2s; padding: 0.5rem; width: 100%; text-align: right; font-family: monospace; font-size: 1rem; }
         .md3-input:focus { border-color: #D0BCFF; background-color: #36343B; }
+        .md3-input-text { text-align: left; font-family: 'Inter', sans-serif; }
         .md3-checkbox { appearance: none; width: 1.25rem; height: 1.25rem; border: 2px solid #CAC4D0; border-radius: 0.25rem; cursor: pointer; position: relative; transition: all 0.2s; }
         .md3-checkbox:checked { background-color: #D0BCFF; border-color: #D0BCFF; }
         .md3-checkbox:checked::after { content: ''; position: absolute; left: 6px; top: 2px; width: 5px; height: 10px; border: solid #381E72; border-width: 0 2px 2px 0; transform: rotate(45deg); }
@@ -36,7 +36,6 @@
         @keyframes fadein { from { bottom: 0; opacity: 0; } to { bottom: 30px; opacity: 1; } }
         @keyframes fadeout { from { bottom: 30px; opacity: 1; } to { bottom: 0; opacity: 0; } }
         
-        /* Toggle Switch para Pendientes */
         .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
         .toggle-switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #4A4458; transition: .4s; border-radius: 24px; }
@@ -61,33 +60,43 @@
     </div>
 
     <div id="view-active">
+        
         <div class="md3-card p-5 mb-6 border border-[#4A4458]">
-            <div class="flex justify-between items-center border-b border-[#4A4458] pb-3 mb-3">
-                <h3 class="text-sm font-semibold text-[#CAC4D0] uppercase tracking-wide">Liquidez Quincenal</h3>
+            <div class="grid grid-cols-2 gap-4 border-b border-[#4A4458] pb-4 mb-4">
+                <div>
+                    <label class="text-[10px] text-[#CAC4D0] uppercase font-semibold block mb-1">Presupuesto Súper</label>
+                    <div class="flex items-center">
+                        <span class="text-[#938F99] mr-1">Q</span>
+                        <input type="number" id="config-super" step="0.01" class="md3-input bg-transparent border-b border-[#4A4458] rounded-none p-1 text-left w-full" onchange="updateConfig()">
+                    </div>
+                </div>
                 <div class="text-right">
-                    <p class="text-[10px] text-[#938F99] uppercase">Saldo Disponible</p>
-                    <p id="saldo-disponible" class="text-2xl font-bold text-[#86EFAC] font-mono">Q 0.00</p>
+                    <p class="text-[10px] text-[#938F99] uppercase">Restante Súper</p>
+                    <p id="saldo-super" class="text-xl font-bold text-[#D0BCFF] font-mono">Q 0.00</p>
                 </div>
             </div>
-            <div class="grid grid-cols-2 gap-4">
+
+            <div class="grid grid-cols-2 gap-4 mb-4">
                 <div>
                     <label class="text-xs text-[#CAC4D0] block mb-1">Sueldo Andrés</label>
-                    <input type="number" id="ingreso-andres" step="0.01" class="md3-input" onchange="updateIncome()">
+                    <input type="number" id="ingreso-andres" step="0.01" class="md3-input" onchange="updateConfig()">
                 </div>
                 <div>
                     <label class="text-xs text-[#CAC4D0] block mb-1">Sueldo Adriana</label>
-                    <input type="number" id="ingreso-adriana" step="0.01" class="md3-input" onchange="updateIncome()">
+                    <input type="number" id="ingreso-adriana" step="0.01" class="md3-input" onchange="updateConfig()">
                 </div>
+            </div>
+
+            <div class="bg-[#36343B] p-3 rounded-xl flex justify-between items-center">
+                <p class="text-xs text-[#CAC4D0] font-semibold">Saldo Líquido Disponible</p>
+                <p id="saldo-total" class="text-xl font-bold font-mono">Q 0.00</p>
             </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-4 mb-6">
-            <div class="md3-card p-4 border border-[#4A4458]">
-                <p class="text-[10px] text-[#CAC4D0] uppercase font-semibold">Total Gasto Real</p>
-                <p id="sum-total-real" class="text-xl font-bold text-[#D0BCFF] font-mono mt-1">Q 0.00</p>
-            </div>
-            <div class="md3-card p-4 border border-[#4A4458] flex justify-between items-center">
-                <p class="text-xs text-[#CAC4D0] font-semibold">Ocultar<br>Comprados</p>
+        <div class="flex justify-between items-center mb-4 px-2">
+            <h2 class="text-sm font-semibold text-[#E6E1E5] uppercase tracking-wide">Desglose Quincenal</h2>
+            <div class="flex items-center gap-2">
+                <span class="text-xs text-[#CAC4D0]">Ocultar Comprados</span>
                 <label class="toggle-switch">
                     <input type="checkbox" id="toggle-pendientes" onchange="renderLists()">
                     <span class="slider"></span>
@@ -106,7 +115,6 @@
         <div class="md3-card p-6 border border-[#4A4458] text-center mb-6">
             <span class="material-symbols-outlined text-4xl text-[#D0BCFF] mb-2">history</span>
             <h2 class="text-xl font-bold text-[#E6E1E5]">Historial de Quincenas</h2>
-            <p class="text-sm text-[#938F99] mt-2">Aquí verás el resumen de las quincenas que has cerrado.</p>
         </div>
         <div id="historial-container" class="space-y-4"></div>
     </div>
@@ -127,42 +135,44 @@
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby6wy-vP9t-C1iQldvJwC-qDfeL-04u-663-QrQN-r2QgQxeEJaMeCsxoyQAe3TUCu_/exec';
 
         const defaultData = {
-            ingresos: { andres: 0, adriana: 0 },
+            config: { andres: 0, adriana: 0, presupuestoSuper: 900.00 },
             super: {
                 insumos: [
-                    { id: "i1", nombre: "Shampoo / Acondicionador", budget: 140.00, actual: 0.00, checked: false },
+                    { id: "i1", nombre: "Shampoo", budget: 70.00, actual: 0.00, checked: false },
+                    { id: "i2", nombre: "Acondicionador", budget: 70.00, actual: 0.00, checked: false },
                     { id: "i3", nombre: "Pasta dental", budget: 100.00, actual: 0.00, checked: false },
-                    { id: "i5", nombre: "Jabón de Cuerpo / Manos", budget: 51.00, actual: 0.00, checked: false },
-                    { id: "i7", nombre: "Desodorantes", budget: 140.00, actual: 0.00, checked: false },
-                    { id: "i9", nombre: "Rasuradoras", budget: 30.00, actual: 0.00, checked: false },
-                    { id: "i11", nombre: "Toallitas Varias", budget: 40.50, actual: 0.00, checked: false }
+                    { id: "i4", nombre: "Jabón de manos", budget: 15.00, actual: 0.00, checked: false },
+                    { id: "i5", nombre: "Jabón de Cuerpo", budget: 36.00, actual: 0.00, checked: false },
+                    { id: "i6", nombre: "Pashte", budget: 20.00, actual: 0.00, checked: false },
+                    { id: "i7", nombre: "Desodorante Mujer", budget: 70.00, actual: 0.00, checked: false },
+                    { id: "i8", nombre: "Desodorante Hombre", budget: 70.00, actual: 0.00, checked: false },
+                    { id: "i9", nombre: "Rasuradora Mujer", budget: 15.00, actual: 0.00, checked: false },
+                    { id: "i10", nombre: "Rasuradora Hombre", budget: 15.00, actual: 0.00, checked: false },
+                    { id: "i11", nombre: "Toallitas Sanitarias", budget: 15.00, actual: 0.00, checked: false },
+                    { id: "i12", nombre: "Toallitas Limpiadoras", budget: 15.00, actual: 0.00, checked: false },
+                    { id: "i13", nombre: "Toallitas Humeda", budget: 10.50, actual: 0.00, checked: false }
                 ],
                 comida: [
-                    { id: "c1", nombre: "Queso Crema / Yogurt", budget: 106.00, actual: 0.00, checked: false },
-                    { id: "c3", nombre: "Avena / Granola", budget: 29.45, actual: 0.00, checked: false },
+                    { id: "c1", nombre: "Queso Crema", budget: 64.00, actual: 0.00, checked: false },
+                    { id: "c2", nombre: "Yogurt Griego", budget: 42.00, actual: 0.00, checked: false },
+                    { id: "c3", nombre: "Avena", budget: 10.45, actual: 0.00, checked: false },
+                    { id: "c4", nombre: "Granola", budget: 19.00, actual: 0.00, checked: false },
                     { id: "c5", nombre: "Pan Sandwich", budget: 21.00, actual: 0.00, checked: false },
-                    { id: "c6", nombre: "Leche", budget: 24.00, actual: 0.00, checked: false }
+                    { id: "c6", nombre: "Leche", budget: 24.00, actual: 0.00, checked: false },
+                    { id: "c7", nombre: "Jalea", budget: 20.00, actual: 0.00, checked: false }
                 ],
                 casa: [
                     { id: "h1", nombre: "Papel de Baño", budget: 34.00, actual: 0.00, checked: false },
-                    { id: "h2", nombre: "Jabón Ropa / Suavitel", budget: 34.00, actual: 0.00, checked: false },
-                    { id: "h4", nombre: "Aceite", budget: 15.00, actual: 0.00, checked: false }
+                    { id: "h2", nombre: "Jabón de Ropa", budget: 17.00, actual: 0.00, checked: false },
+                    { id: "h3", nombre: "Suavitel", budget: 17.00, actual: 0.00, checked: false },
+                    { id: "h4", nombre: "Aceite", budget: 15.00, actual: 0.00, checked: false },
+                    { id: "h5", nombre: "Jabón de Trastos", budget: 15.00, actual: 0.00, checked: false }
                 ]
             },
             general: {
-                servicios: [
-                    { id: "s1", nombre: "Internet Residencial", budget: 250.00, actual: 0.00, checked: false },
-                    { id: "s2", nombre: "Plan Celular", budget: 150.00, actual: 0.00, checked: false }
-                ],
-                transporte: [
-                    { id: "t1", nombre: "Gasolina (Moto)", budget: 150.00, actual: 0.00, checked: false },
-                    { id: "t2", nombre: "Parqueo / Peajes", budget: 50.00, actual: 0.00, checked: false }
-                ],
-                compromisos: [
-                    { id: "g1", nombre: "Cuota Apartamento", budget: 1000.00, actual: 0.00, checked: false },
-                    { id: "g2", nombre: "Fondo Viaje / Recreación", budget: 400.00, actual: 0.00, checked: false },
-                    { id: "g3", nombre: "Universidad", budget: 200.00, actual: 0.00, checked: false }
-                ]
+                servicios: [],
+                compromisos: [],
+                otros: []
             }
         };
 
@@ -170,22 +180,24 @@
             insumos: { title: 'Insumos Personales', icon: 'soap', color: '#FCD34D' },
             comida: { title: 'Comida', icon: 'restaurant', color: '#86EFAC' },
             casa: { title: 'Limpieza Casa', icon: 'home', color: '#93C5FD' },
-            servicios: { title: 'Servicios', icon: 'wifi', color: '#F87171' },
-            transporte: { title: 'Transporte', icon: 'two_wheeler', color: '#C084FC' },
-            compromisos: { title: 'Compromisos / Ahorros', icon: 'account_balance', color: '#6EE7B7' }
+            servicios: { title: 'Servicios Básicos', icon: 'wifi', color: '#F87171' },
+            compromisos: { title: 'Compromisos Fijos', icon: 'account_balance', color: '#C084FC' },
+            otros: { title: 'Otros Gastos', icon: 'payments', color: '#6EE7B7' }
         };
 
-        let appData = JSON.parse(localStorage.getItem('budgetAppData_v3')) || defaultData;
-        let historyData = JSON.parse(localStorage.getItem('budgetHistory_v1')) || [];
+        let appData = JSON.parse(localStorage.getItem('budgetAppData_v4')) || defaultData;
+        let historyData = JSON.parse(localStorage.getItem('budgetHistory_v2')) || [];
         let activeTab = 'super';
 
-        // Inicializar inputs de ingresos
-        document.getElementById('ingreso-andres').value = appData.ingresos?.andres || 0;
-        document.getElementById('ingreso-adriana').value = appData.ingresos?.adriana || 0;
+        if(!appData.config) appData.config = defaultData.config;
+
+        document.getElementById('ingreso-andres').value = appData.config.andres || 0;
+        document.getElementById('ingreso-adriana').value = appData.config.adriana || 0;
+        document.getElementById('config-super').value = appData.config.presupuestoSuper || 900;
 
         function saveLocal() {
-            localStorage.setItem('budgetAppData_v3', JSON.stringify(appData));
-            localStorage.setItem('budgetHistory_v1', JSON.stringify(historyData));
+            localStorage.setItem('budgetAppData_v4', JSON.stringify(appData));
+            localStorage.setItem('budgetHistory_v2', JSON.stringify(historyData));
             updateLogic();
         }
 
@@ -211,29 +223,32 @@
             updateLogic();
         }
 
-        function updateIncome() {
-            if(!appData.ingresos) appData.ingresos = { andres: 0, adriana: 0 };
-            appData.ingresos.andres = parseFloat(document.getElementById('ingreso-andres').value) || 0;
-            appData.ingresos.adriana = parseFloat(document.getElementById('ingreso-adriana').value) || 0;
+        function updateConfig() {
+            appData.config.andres = parseFloat(document.getElementById('ingreso-andres').value) || 0;
+            appData.config.adriana = parseFloat(document.getElementById('ingreso-adriana').value) || 0;
+            appData.config.presupuestoSuper = parseFloat(document.getElementById('config-super').value) || 0;
             saveLocal();
         }
 
         function updateLogic() {
-            let totalReal = 0;
-            // Sumar todos los gastos de todas las pestañas
-            ['super', 'general'].forEach(vista => {
-                Object.keys(appData[vista]).forEach(cat => {
-                    appData[vista][cat].forEach(item => totalReal += item.actual);
-                });
-            });
+            let realSuper = 0, realGeneral = 0;
+            
+            Object.keys(appData.super).forEach(cat => appData.super[cat].forEach(i => realSuper += i.actual));
+            Object.keys(appData.general).forEach(cat => appData.general[cat].forEach(i => realGeneral += i.actual));
 
-            const totalIngresos = (appData.ingresos?.andres || 0) + (appData.ingresos?.adriana || 0);
-            const saldo = totalIngresos - totalReal;
+            const limitSuper = appData.config.presupuestoSuper || 0;
+            const diffSuper = limitSuper - realSuper;
+            
+            const saldoSuperEl = document.getElementById('saldo-super');
+            saldoSuperEl.textContent = formatQ(diffSuper);
+            saldoSuperEl.className = `text-xl font-bold font-mono ${diffSuper >= 0 ? 'text-[#86EFAC]' : 'text-[#F87171]'}`;
 
-            document.getElementById('sum-total-real').textContent = formatQ(totalReal);
-            const saldoEl = document.getElementById('saldo-disponible');
-            saldoEl.textContent = formatQ(saldo);
-            saldoEl.className = `text-2xl font-bold font-mono ${saldo >= 0 ? 'text-[#86EFAC]' : 'text-[#F87171]'}`;
+            const totalIngresos = (appData.config.andres || 0) + (appData.config.adriana || 0);
+            const saldoTotal = totalIngresos - (realSuper + realGeneral);
+            
+            const saldoTotalEl = document.getElementById('saldo-total');
+            saldoTotalEl.textContent = formatQ(saldoTotal);
+            saldoTotalEl.className = `text-xl font-bold font-mono ${saldoTotal >= 0 ? 'text-[#86EFAC]' : 'text-[#F87171]'}`;
         }
 
         function renderLists() {
@@ -241,11 +256,11 @@
             container.innerHTML = '';
             const hideBought = document.getElementById('toggle-pendientes').checked;
             
-            // Si la vista no existe (ej. cambio de estructura), usar default
-            if(!appData[activeTab]) return;
-
             Object.keys(appData[activeTab]).forEach(cat => {
                 const conf = categoryStyles[cat];
+                let subtotalReal = 0;
+                appData[activeTab][cat].forEach(i => subtotalReal += i.actual);
+
                 let catHTML = `
                 <div class="md3-card overflow-hidden">
                     <div class="p-4 flex items-center justify-between border-b border-[#4A4458] bg-[#36343B]">
@@ -253,57 +268,82 @@
                             <span class="material-symbols-outlined" style="color: ${conf.color}">${conf.icon}</span>
                             <h3 class="font-semibold text-[#E6E1E5]">${conf.title}</h3>
                         </div>
+                        <span class="text-sm font-bold font-mono text-[#D0BCFF]">${formatQ(subtotalReal)}</span>
                     </div>
                     <div class="p-2 space-y-1">`;
                 
-                let hasItems = false;
                 appData[activeTab][cat].forEach((item, index) => {
-                    if (hideBought && item.checked) return; // Filtrar comprados
-                    hasItems = true;
+                    if (hideBought && item.checked) return;
                     catHTML += `
-                        <div class="flex items-center gap-3 p-3 bg-[#1C1B1F] rounded-xl">
+                        <div class="flex items-center gap-3 p-3 bg-[#1C1B1F] rounded-xl relative group">
                             <input type="checkbox" class="md3-checkbox shrink-0" ${item.checked ? 'checked' : ''} 
                                 onchange="toggleCheck('${activeTab}', '${cat}', ${index})">
                             <div class="flex-1 min-w-0">
                                 <p class="text-sm font-medium truncate ${item.checked ? 'item-checked' : ''}">${item.nombre}</p>
-                                <p class="text-[10px] text-[#CAC4D0]">Presupuesto: ${formatQ(item.budget)}</p>
+                                <p class="text-[10px] text-[#CAC4D0]">P: ${formatQ(item.budget)}</p>
                             </div>
                             <div class="flex flex-col w-20">
                                 <input type="number" step="0.01" value="${item.actual === 0 ? '' : item.actual}" placeholder="0.00"
                                     class="md3-input p-1" onchange="updateActual('${activeTab}', '${cat}', ${index}, this.value)">
                             </div>
+                            <button onclick="deleteItem('${activeTab}', '${cat}', ${index})" class="absolute right-0 top-0 h-full px-2 text-[#F2B8B5] bg-[#601410] opacity-0 group-hover:opacity-100 transition-opacity rounded-r-xl">
+                                <span class="material-symbols-outlined text-sm">delete</span>
+                            </button>
                         </div>`;
                 });
                 
-                catHTML += `</div></div>`;
-                if(hasItems) container.innerHTML += catHTML;
+                catHTML += `
+                    <form onsubmit="addItem(event, '${activeTab}', '${cat}')" class="flex gap-2 p-2 mt-2 bg-[#36343B] rounded-lg border border-[#4A4458] border-dashed">
+                        <input type="text" name="nombre" placeholder="Nuevo artículo..." required class="md3-input md3-input-text flex-1 text-sm p-2 bg-[#1C1B1F]">
+                        <input type="number" step="0.01" name="budget" placeholder="Presup." class="md3-input w-20 text-sm p-2 bg-[#1C1B1F]">
+                        <button type="submit" class="bg-[#4A4458] text-[#D0BCFF] px-3 rounded-lg hover:bg-[#D0BCFF] hover:text-[#381E72] transition-colors">
+                            <span class="material-symbols-outlined text-sm">add</span>
+                        </button>
+                    </form>
+                </div></div>`;
+                
+                container.innerHTML += catHTML;
             });
-
-            if(container.innerHTML === '') {
-                container.innerHTML = `<p class="text-center text-[#938F99] mt-8">No hay artículos pendientes.</p>`;
-            }
         }
 
         function toggleCheck(vista, cat, index) { 
             appData[vista][cat][index].checked = !appData[vista][cat][index].checked; 
             saveLocal(); renderLists(); 
         }
+        
         function updateActual(vista, cat, index, value) { 
             let val = parseFloat(value);
             appData[vista][cat][index].actual = isNaN(val) ? 0 : val;
-            // Si agrega valor, marcar check automático por UX
             if(appData[vista][cat][index].actual > 0) appData[vista][cat][index].checked = true;
             if(appData[vista][cat][index].actual === 0) appData[vista][cat][index].checked = false;
             saveLocal(); renderLists(); 
         }
 
+        function addItem(e, vista, cat) {
+            e.preventDefault();
+            const form = e.target;
+            const nombre = form.nombre.value.trim();
+            const budget = parseFloat(form.budget.value) || 0;
+            if(nombre) {
+                appData[vista][cat].push({ id: 'n_' + Date.now(), nombre: nombre, budget: budget, actual: 0, checked: false });
+                saveLocal(); renderLists();
+            }
+        }
+
+        function deleteItem(vista, cat, index) {
+            if(confirm("¿Eliminar artículo?")) {
+                appData[vista][cat].splice(index, 1);
+                saveLocal(); renderLists();
+            }
+        }
+
         function cerrarQuincena() {
-            if(!confirm("¿Seguro que deseas Cerrar la Quincena?\nEsto guardará los totales en el historial y pondrá a cero los valores reales para que puedas iniciar de nuevo, manteniendo tus presupuestos.")) return;
+            if(!confirm("¿Seguro que deseas Cerrar la Quincena?")) return;
 
             let totalS = 0, totalG = 0;
             Object.keys(appData.super).forEach(c => appData.super[c].forEach(i => totalS += i.actual));
             Object.keys(appData.general).forEach(c => appData.general[c].forEach(i => totalG += i.actual));
-            const totalIngresos = (appData.ingresos?.andres || 0) + (appData.ingresos?.adriana || 0);
+            const totalIngresos = (appData.config.andres || 0) + (appData.config.adriana || 0);
 
             const record = {
                 id: Date.now(),
@@ -314,15 +354,11 @@
                 ahorro: totalIngresos - (totalS + totalG)
             };
 
-            historyData.unshift(record); // Agregar al inicio
+            historyData.unshift(record);
 
-            // Reiniciar Valores Reales y Checks, mantener presupuesto
             ['super', 'general'].forEach(v => {
                 Object.keys(appData[v]).forEach(c => {
-                    appData[v][c].forEach(item => {
-                        item.actual = 0;
-                        item.checked = false;
-                    });
+                    appData[v][c].forEach(item => { item.actual = 0; item.checked = false; });
                 });
             });
 
@@ -330,15 +366,14 @@
             document.getElementById('toggle-pendientes').checked = false;
             showSnackbar("Quincena Cerrada y Guardada en Historial");
             switchTab('historial');
-            syncData(record); // Enviar resumen a Google Sheets
+            syncData(record);
         }
 
         function renderHistorial() {
             const container = document.getElementById('historial-container');
             container.innerHTML = '';
             if(historyData.length === 0) {
-                container.innerHTML = `<p class="text-center text-[#938F99]">Aún no hay quincenas cerradas.</p>`;
-                return;
+                container.innerHTML = `<p class="text-center text-[#938F99]">Aún no hay quincenas cerradas.</p>`; return;
             }
 
             historyData.forEach(h => {
@@ -368,14 +403,10 @@
             setTimeout(() => { sb.className = sb.className.replace("show", ""); }, 3000);
         }
 
-        // Lógica de botón flotante Scroll Top
         window.onscroll = function() {
             const fabUp = document.getElementById('fab-up');
-            if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
-                fabUp.classList.add('visible');
-            } else {
-                fabUp.classList.remove('visible');
-            }
+            if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) fabUp.classList.add('visible');
+            else fabUp.classList.remove('visible');
         };
 
         async function syncData(cerrarRecord = null) {
@@ -400,9 +431,7 @@
             finally { icon.style.display = 'block'; spinner.style.display = 'none'; }
         }
 
-        document.addEventListener('DOMContentLoaded', () => { 
-            switchTab('super'); 
-        });
+        document.addEventListener('DOMContentLoaded', () => { switchTab('super'); });
     </script>
 </body>
 </html>
