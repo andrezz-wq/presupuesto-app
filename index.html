@@ -67,11 +67,11 @@
             <div class="grid grid-cols-2 gap-4 mb-4 pb-4 border-b border-[#4A4458]">
                 <div>
                     <label class="text-xs text-[#CAC4D0] block mb-1">Sueldo Andrés</label>
-                    <input type="number" id="ingreso-andres" step="0.01" class="md3-input" onchange="updateConfig()">
+                    <input type="number" id="ingreso-andres" step="0.01" min="0" class="md3-input" onchange="updateConfig()">
                 </div>
                 <div>
                     <label class="text-xs text-[#CAC4D0] block mb-1">Sueldo Adriana</label>
-                    <input type="number" id="ingreso-adriana" step="0.01" class="md3-input" onchange="updateConfig()">
+                    <input type="number" id="ingreso-adriana" step="0.01" min="0" class="md3-input" onchange="updateConfig()">
                 </div>
             </div>
 
@@ -88,7 +88,7 @@
                     <label class="text-[10px] text-[#CAC4D0] uppercase font-semibold block mb-1">Presupuesto Súper</label>
                     <div class="flex items-center">
                         <span class="text-[#938F99] mr-1">Q</span>
-                        <input type="number" id="config-super" step="0.01" class="md3-input bg-transparent border-b border-[#4A4458] rounded-none p-1 text-left w-full" onchange="updateConfig()">
+                        <input type="number" id="config-super" step="0.01" min="0" class="md3-input bg-transparent border-b border-[#4A4458] rounded-none p-1 text-left w-full" onchange="updateConfig()">
                     </div>
                 </div>
                 <div class="text-right">
@@ -247,11 +247,17 @@
         }
 
         function updateConfig() {
-            appData.config.andres = parseFloat(document.getElementById('ingreso-andres').value) || 0;
-            appData.config.adriana = parseFloat(document.getElementById('ingreso-adriana').value) || 0;
-            appData.config.presupuestoSuper = parseFloat(document.getElementById('config-super').value) || 0;
+            // Protección contra números negativos
+            appData.config.andres = Math.max(0, parseFloat(document.getElementById('ingreso-andres').value) || 0);
+            appData.config.adriana = Math.max(0, parseFloat(document.getElementById('ingreso-adriana').value) || 0);
+            appData.config.presupuestoSuper = Math.max(0, parseFloat(document.getElementById('config-super').value) || 0);
             appData.config.superActivo = document.getElementById('toggle-super-activo').checked;
             
+            // Actualizar visualmente para que no queden signos '-' escritos
+            document.getElementById('ingreso-andres').value = appData.config.andres;
+            document.getElementById('ingreso-adriana').value = appData.config.adriana;
+            document.getElementById('config-super').value = appData.config.presupuestoSuper;
+
             saveLocal();
             if(activeTab === 'super') renderLists(); 
         }
@@ -312,16 +318,32 @@
             Object.keys(appData[activeTab]).forEach(cat => {
                 const conf = categoryStyles[cat] || { title: cat, icon: 'list', color: '#fff' };
                 let subtotalReal = 0;
-                appData[activeTab][cat].forEach(i => subtotalReal += i.actual);
+                let subtotalBudget = 0;
+                
+                appData[activeTab][cat].forEach(i => {
+                    subtotalReal += i.actual;
+                    subtotalBudget += i.budget;
+                });
+
+                // Lógica de Barra de Progreso Visual
+                let progressPercent = subtotalBudget > 0 ? (subtotalReal / subtotalBudget) * 100 : 0;
+                let progressColor = '#86EFAC'; // Verde (Por debajo del 80%)
+                if (progressPercent > 100) progressColor = '#F87171'; // Rojo (Pasado)
+                else if (progressPercent >= 80) progressColor = '#FCD34D'; // Amarillo (Cerca del límite)
 
                 let catHTML = `
                 <div class="md3-card overflow-hidden">
-                    <div class="p-4 flex items-center justify-between border-b border-[#4A4458] bg-[#36343B]">
-                        <div class="flex items-center gap-2">
-                            <span class="material-symbols-outlined" style="color: ${conf.color}">${conf.icon}</span>
-                            <h3 class="font-semibold text-[#E6E1E5]">${conf.title}</h3>
+                    <div class="p-4 flex flex-col border-b border-[#4A4458] bg-[#36343B]">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined" style="color: ${conf.color}">${conf.icon}</span>
+                                <h3 class="font-semibold text-[#E6E1E5]">${conf.title}</h3>
+                            </div>
+                            <span class="text-sm font-bold font-mono text-[#D0BCFF]">${formatQ(subtotalReal)}</span>
                         </div>
-                        <span class="text-sm font-bold font-mono text-[#D0BCFF]">${formatQ(subtotalReal)}</span>
+                        <div class="w-full bg-[#1C1B1F] rounded-full h-1.5 mt-3">
+                            <div class="h-1.5 rounded-full transition-all duration-300" style="width: ${Math.min(100, progressPercent)}%; background-color: ${progressColor}"></div>
+                        </div>
                     </div>
                     <div class="p-2 space-y-1">`;
                 
@@ -336,7 +358,7 @@
                                 <p class="text-[10px] text-[#CAC4D0]">P: ${formatQ(item.budget)}</p>
                             </div>
                             <div class="flex flex-col w-16">
-                                <input type="number" step="0.01" value="${item.actual === 0 ? '' : item.actual}" placeholder="0.00"
+                                <input type="number" step="0.01" min="0" value="${item.actual === 0 ? '' : item.actual}" placeholder="0.00"
                                     class="md3-input p-1" onchange="updateActual('${activeTab}', '${cat}', ${index}, this.value)">
                             </div>
                             <button onclick="deleteItem('${activeTab}', '${cat}', ${index})" class="p-2 ml-1 text-[#938F99] hover:text-[#F87171] bg-transparent transition-colors rounded-lg flex items-center justify-center">
@@ -348,7 +370,7 @@
                 catHTML += `
                     <form onsubmit="addItem(event, '${activeTab}', '${cat}')" class="flex gap-2 p-2 mt-2 bg-[#36343B] rounded-lg border border-[#4A4458] border-dashed">
                         <input type="text" name="nombre" placeholder="Nuevo artículo..." required class="md3-input md3-input-text flex-1 text-sm p-2 bg-[#1C1B1F]">
-                        <input type="number" step="0.01" name="budget" placeholder="Presup." class="md3-input w-20 text-sm p-2 bg-[#1C1B1F]">
+                        <input type="number" step="0.01" min="0" name="budget" placeholder="Presup." class="md3-input w-20 text-sm p-2 bg-[#1C1B1F]">
                         <button type="submit" class="bg-[#4A4458] text-[#D0BCFF] px-3 rounded-lg hover:bg-[#D0BCFF] hover:text-[#381E72] transition-colors">
                             <span class="material-symbols-outlined text-sm">add</span>
                         </button>
@@ -376,10 +398,13 @@
         }
         
         function updateActual(vista, cat, index, value) { 
-            let val = parseFloat(value);
+            // Protección contra números negativos
+            let val = Math.max(0, parseFloat(value));
             appData[vista][cat][index].actual = isNaN(val) ? 0 : val;
+            
             if(appData[vista][cat][index].actual > 0) appData[vista][cat][index].checked = true;
             if(appData[vista][cat][index].actual === 0) appData[vista][cat][index].checked = false;
+            
             saveLocal(); renderLists(); 
         }
 
@@ -387,7 +412,9 @@
             e.preventDefault();
             const form = e.target;
             const nombre = form.nombre.value.trim();
-            const budget = parseFloat(form.budget.value) || 0;
+            // Protección contra presupuestos negativos
+            const budget = Math.max(0, parseFloat(form.budget.value) || 0);
+            
             if(nombre) {
                 appData[vista][cat].push({ id: 'n_' + Date.now(), nombre: nombre, budget: budget, actual: 0, checked: false });
                 saveLocal(); renderLists();
@@ -435,7 +462,7 @@
 
             saveLocal();
             document.getElementById('toggle-pendientes').checked = false;
-            showSnackbar("Quincena Cerrada y Guardada en Historial");
+            showSnackbar("Guardando y enviando a la nube...");
             switchTab('historial');
             syncData(record);
         }
@@ -498,12 +525,25 @@
             };
 
             try {
-                await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
+                // Al quitar el "no-cors" y mandar un header de texto plano engañamos al navegador 
+                // para que no exija un preflight request severo de parte del script de Google
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify(payload)
                 });
-                showSnackbar(cerrarRecord ? "Resumen enviado a Sheets" : "Sincronizado con Sheets");
-            } catch (error) { showSnackbar("Error de conexión"); } 
+                
+                const result = await response.json();
+
+                if(result.status === "success") {
+                    showSnackbar(cerrarRecord ? "Resumen y Detalle guardados" : "Sincronizado con Sheets");
+                } else {
+                    showSnackbar("Error al procesar: " + (result.message || "Desconocido"));
+                }
+            } catch (error) { 
+                console.error(error);
+                showSnackbar("Error de conexión"); 
+            } 
             finally { icon.style.display = 'block'; spinner.style.display = 'none'; }
         }
 
