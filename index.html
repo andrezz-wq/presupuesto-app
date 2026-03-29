@@ -23,6 +23,7 @@
         
         .tab-btn { flex: 1; padding: 0.75rem; text-align: center; font-size: 0.875rem; font-weight: 600; border-radius: 0.5rem; transition: all 0.2s; color: #CAC4D0; }
         .tab-active { background-color: #4A4458; color: #D0BCFF; }
+        .tab-disabled { opacity: 0.5; cursor: not-allowed; }
 
         .fab-main { position: fixed; bottom: 1.5rem; right: 1.5rem; background-color: #D0BCFF; color: #381E72; width: 3.5rem; height: 3.5rem; border-radius: 1rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 8px 3px rgba(0,0,0,0.15); cursor: pointer; z-index: 50; }
         .fab-up { position: fixed; bottom: 5.5rem; right: 1.5rem; background-color: #36343B; color: #CAC4D0; width: 2.5rem; height: 2.5rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.2); cursor: pointer; z-index: 40; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
@@ -50,7 +51,7 @@
         <h1 class="text-2xl font-bold mb-4 flex items-center gap-2 text-[#D0BCFF]">
             <span class="material-symbols-outlined">account_balance_wallet</span> Presupuesto Pro
         </h1>
-        <input type="text" id="budget-name" placeholder="Nombre (ej. Quincena 1)" class="w-full p-4 text-lg font-medium bg-[#4A4458] text-[#E6E1E5] rounded-xl border-none outline-none focus:ring-2 focus:ring-[#D0BCFF]" value="Quincena Actual">
+        <input type="text" id="budget-name" placeholder="Nombre (ej. Q1 - Noviembre)" class="w-full p-4 text-lg font-medium bg-[#4A4458] text-[#E6E1E5] rounded-xl border-none outline-none focus:ring-2 focus:ring-[#D0BCFF]" value="Quincena Actual">
     </header>
 
     <div class="flex bg-[#36343B] rounded-xl p-1 mb-6 border border-[#4A4458]">
@@ -62,7 +63,27 @@
     <div id="view-active">
         
         <div class="md3-card p-5 mb-6 border border-[#4A4458]">
-            <div class="grid grid-cols-2 gap-4 border-b border-[#4A4458] pb-4 mb-4">
+            
+            <div class="grid grid-cols-2 gap-4 mb-4 pb-4 border-b border-[#4A4458]">
+                <div>
+                    <label class="text-xs text-[#CAC4D0] block mb-1">Sueldo Andrés</label>
+                    <input type="number" id="ingreso-andres" step="0.01" class="md3-input" onchange="updateConfig()">
+                </div>
+                <div>
+                    <label class="text-xs text-[#CAC4D0] block mb-1">Sueldo Adriana</label>
+                    <input type="number" id="ingreso-adriana" step="0.01" class="md3-input" onchange="updateConfig()">
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center mb-4">
+                <label class="text-sm font-semibold text-[#E6E1E5]">Habilitar Súper (Q2)</label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="toggle-super-activo" onchange="updateConfig()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div id="panel-super-config" class="grid grid-cols-2 gap-4 border-b border-[#4A4458] pb-4 mb-4">
                 <div>
                     <label class="text-[10px] text-[#CAC4D0] uppercase font-semibold block mb-1">Presupuesto Súper</label>
                     <div class="flex items-center">
@@ -76,18 +97,7 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                    <label class="text-xs text-[#CAC4D0] block mb-1">Sueldo Andrés</label>
-                    <input type="number" id="ingreso-andres" step="0.01" class="md3-input" onchange="updateConfig()">
-                </div>
-                <div>
-                    <label class="text-xs text-[#CAC4D0] block mb-1">Sueldo Adriana</label>
-                    <input type="number" id="ingreso-adriana" step="0.01" class="md3-input" onchange="updateConfig()">
-                </div>
-            </div>
-
-            <div class="bg-[#36343B] p-3 rounded-xl flex justify-between items-center">
+            <div class="bg-[#36343B] p-3 rounded-xl flex justify-between items-center mt-2">
                 <p class="text-xs text-[#CAC4D0] font-semibold">Saldo Líquido Disponible</p>
                 <p id="saldo-total" class="text-xl font-bold font-mono">Q 0.00</p>
             </div>
@@ -122,12 +132,10 @@
     <button id="fab-up" class="fab-up" onclick="window.scrollTo(0,0)">
         <span class="material-symbols-outlined">arrow_upward</span>
     </button>
-
     <button id="fab-sync" class="fab-main" onclick="syncData()">
         <span id="fab-icon" class="material-symbols-outlined text-3xl">cloud_sync</span>
         <span id="fab-spinner" class="material-symbols-outlined text-3xl spinner">progress_activity</span>
     </button>
-
     <div id="snackbar">Acción completada</div>
 
     <script>
@@ -135,31 +143,22 @@
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby6wy-vP9t-C1iQldvJwC-qDfeL-04u-663-QrQN-r2QgQxeEJaMeCsxoyQAe3TUCu_/exec';
 
         const defaultData = {
-            config: { andres: 0, adriana: 0, presupuestoSuper: 900.00 },
+            config: { andres: 2841.00, adriana: 1000.00, presupuestoSuper: 900.00, superActivo: true },
             super: {
                 insumos: [
                     { id: "i1", nombre: "Shampoo", budget: 70.00, actual: 0.00, checked: false },
-                    { id: "i2", nombre: "Acondicionador", budget: 70.00, actual: 0.00, checked: false },
                     { id: "i3", nombre: "Pasta dental", budget: 100.00, actual: 0.00, checked: false },
-                    { id: "i4", nombre: "Jabón de manos", budget: 15.00, actual: 0.00, checked: false },
-                    { id: "i5", nombre: "Jabón de Cuerpo", budget: 36.00, actual: 0.00, checked: false },
-                    { id: "i6", nombre: "Pashte", budget: 20.00, actual: 0.00, checked: false },
-                    { id: "i7", nombre: "Desodorante Mujer", budget: 70.00, actual: 0.00, checked: false },
-                    { id: "i8", nombre: "Desodorante Hombre", budget: 70.00, actual: 0.00, checked: false },
-                    { id: "i9", nombre: "Rasuradora Mujer", budget: 15.00, actual: 0.00, checked: false },
-                    { id: "i10", nombre: "Rasuradora Hombre", budget: 15.00, actual: 0.00, checked: false },
-                    { id: "i11", nombre: "Toallitas Sanitarias", budget: 15.00, actual: 0.00, checked: false },
-                    { id: "i12", nombre: "Toallitas Limpiadoras", budget: 15.00, actual: 0.00, checked: false },
-                    { id: "i13", nombre: "Toallitas Humeda", budget: 10.50, actual: 0.00, checked: false }
+                    { id: "i5", nombre: "Jabón de Cuerpo / Manos", budget: 51.00, actual: 0.00, checked: false },
+                    { id: "i7", nombre: "Desodorantes", budget: 140.00, actual: 0.00, checked: false },
+                    { id: "i9", nombre: "Rasuradoras", budget: 30.00, actual: 0.00, checked: false },
+                    { id: "i11", nombre: "Toallitas Varias", budget: 40.50, actual: 0.00, checked: false }
                 ],
                 comida: [
                     { id: "c1", nombre: "Queso Crema", budget: 64.00, actual: 0.00, checked: false },
                     { id: "c2", nombre: "Yogurt Griego", budget: 42.00, actual: 0.00, checked: false },
                     { id: "c3", nombre: "Avena", budget: 10.45, actual: 0.00, checked: false },
-                    { id: "c4", nombre: "Granola", budget: 19.00, actual: 0.00, checked: false },
                     { id: "c5", nombre: "Pan Sandwich", budget: 21.00, actual: 0.00, checked: false },
-                    { id: "c6", nombre: "Leche", budget: 24.00, actual: 0.00, checked: false },
-                    { id: "c7", nombre: "Jalea", budget: 20.00, actual: 0.00, checked: false }
+                    { id: "c6", nombre: "Leche", budget: 24.00, actual: 0.00, checked: false }
                 ],
                 casa: [
                     { id: "h1", nombre: "Papel de Baño", budget: 34.00, actual: 0.00, checked: false },
@@ -170,9 +169,22 @@
                 ]
             },
             general: {
-                servicios: [],
-                compromisos: [],
-                otros: []
+                transferencias: [
+                    { id: "t1", nombre: "CASA DESARROLLOS", budget: 700.00, actual: 0.00, checked: false },
+                    { id: "t2", nombre: "AHORRO PERPETUO", budget: 250.00, actual: 0.00, checked: false }
+                ],
+                efectivo: [
+                    { id: "e1", nombre: "CASA MARY", budget: 300.00, actual: 0.00, checked: false },
+                    { id: "e2", nombre: "COMIDA MARY", budget: 100.00, actual: 0.00, checked: false },
+                    { id: "e3", nombre: "GASTO SEMANA", budget: 400.00, actual: 0.00, checked: false },
+                    { id: "e4", nombre: "GASTO FIN DE SEMANA", budget: 600.00, actual: 0.00, checked: false }
+                ],
+                cuenta_transitoria: [
+                    { id: "c1", nombre: "MOTOCICLETA", budget: 100.00, actual: 0.00, checked: false },
+                    { id: "c2", nombre: "INTERNET CLARO", budget: 120.00, actual: 0.00, checked: false },
+                    { id: "c3", nombre: "INTERNET TIGO", budget: 390.00, actual: 0.00, checked: false },
+                    { id: "c4", nombre: "VISA CUOTAS", budget: 150.00, actual: 0.00, checked: false }
+                ]
             }
         };
 
@@ -180,23 +192,27 @@
             insumos: { title: 'Insumos Personales', icon: 'soap', color: '#FCD34D' },
             comida: { title: 'Comida', icon: 'restaurant', color: '#86EFAC' },
             casa: { title: 'Limpieza Casa', icon: 'home', color: '#93C5FD' },
-            servicios: { title: 'Servicios Básicos', icon: 'wifi', color: '#F87171' },
-            compromisos: { title: 'Compromisos Fijos', icon: 'account_balance', color: '#C084FC' },
-            otros: { title: 'Otros Gastos', icon: 'payments', color: '#6EE7B7' }
+            transferencias: { title: 'Transferencias', icon: 'swap_horiz', color: '#F87171' },
+            efectivo: { title: 'Efectivo', icon: 'payments', color: '#C084FC' },
+            cuenta_transitoria: { title: 'Cuenta Transitoria', icon: 'account_balance', color: '#6EE7B7' }
         };
 
-        let appData = JSON.parse(localStorage.getItem('budgetAppData_v4')) || defaultData;
+        let appData = JSON.parse(localStorage.getItem('budgetAppData_v5')) || defaultData;
         let historyData = JSON.parse(localStorage.getItem('budgetHistory_v2')) || [];
         let activeTab = 'super';
 
+        // Estructuras defensivas para actualizaciones de versión
         if(!appData.config) appData.config = defaultData.config;
+        if(appData.config.superActivo === undefined) appData.config.superActivo = true;
+        if(!appData.general.transferencias) appData.general = defaultData.general;
 
-        document.getElementById('ingreso-andres').value = appData.config.andres || 0;
-        document.getElementById('ingreso-adriana').value = appData.config.adriana || 0;
-        document.getElementById('config-super').value = appData.config.presupuestoSuper || 900;
+        document.getElementById('ingreso-andres').value = appData.config.andres;
+        document.getElementById('ingreso-adriana').value = appData.config.adriana;
+        document.getElementById('config-super').value = appData.config.presupuestoSuper;
+        document.getElementById('toggle-super-activo').checked = appData.config.superActivo;
 
         function saveLocal() {
-            localStorage.setItem('budgetAppData_v4', JSON.stringify(appData));
+            localStorage.setItem('budgetAppData_v5', JSON.stringify(appData));
             localStorage.setItem('budgetHistory_v2', JSON.stringify(historyData));
             updateLogic();
         }
@@ -205,10 +221,19 @@
 
         function switchTab(tabName) {
             activeTab = tabName;
-            document.getElementById('tab-super').classList.toggle('tab-active', tabName === 'super');
+            const btnSuper = document.getElementById('tab-super');
+            
+            btnSuper.classList.toggle('tab-active', tabName === 'super');
             document.getElementById('tab-general').classList.toggle('tab-active', tabName === 'general');
             document.getElementById('tab-historial').classList.toggle('tab-active', tabName === 'historial');
             
+            // UI visual feedback if super is disabled
+            if(!appData.config.superActivo && tabName !== 'historial') {
+                btnSuper.classList.add('tab-disabled');
+            } else {
+                btnSuper.classList.remove('tab-disabled');
+            }
+
             if(tabName === 'historial') {
                 document.getElementById('view-active').classList.add('hidden');
                 document.getElementById('view-historial').classList.remove('hidden');
@@ -227,37 +252,71 @@
             appData.config.andres = parseFloat(document.getElementById('ingreso-andres').value) || 0;
             appData.config.adriana = parseFloat(document.getElementById('ingreso-adriana').value) || 0;
             appData.config.presupuestoSuper = parseFloat(document.getElementById('config-super').value) || 0;
+            appData.config.superActivo = document.getElementById('toggle-super-activo').checked;
+            
             saveLocal();
+            if(activeTab === 'super') renderLists(); // Forzar actualización visual del bloqueo
         }
 
         function updateLogic() {
             let realSuper = 0, realGeneral = 0;
+            let limitSuper = 0;
             
-            Object.keys(appData.super).forEach(cat => appData.super[cat].forEach(i => realSuper += i.actual));
             Object.keys(appData.general).forEach(cat => appData.general[cat].forEach(i => realGeneral += i.actual));
 
-            const limitSuper = appData.config.presupuestoSuper || 0;
+            // Logica Condicional del Súper
+            const panelSuper = document.getElementById('panel-super-config');
+            if(appData.config.superActivo) {
+                panelSuper.style.opacity = '1';
+                panelSuper.style.pointerEvents = 'auto';
+                limitSuper = appData.config.presupuestoSuper || 0;
+                Object.keys(appData.super).forEach(cat => appData.super[cat].forEach(i => realSuper += i.actual));
+            } else {
+                panelSuper.style.opacity = '0.3';
+                panelSuper.style.pointerEvents = 'none';
+                limitSuper = 0; 
+                realSuper = 0; // Se ignora contablemente
+            }
+
             const diffSuper = limitSuper - realSuper;
-            
             const saldoSuperEl = document.getElementById('saldo-super');
             saldoSuperEl.textContent = formatQ(diffSuper);
             saldoSuperEl.className = `text-xl font-bold font-mono ${diffSuper >= 0 ? 'text-[#86EFAC]' : 'text-[#F87171]'}`;
 
             const totalIngresos = (appData.config.andres || 0) + (appData.config.adriana || 0);
-            const saldoTotal = totalIngresos - (realSuper + realGeneral);
+            
+            // El saldo total resta lo asignado al super (limitSuper) y lo gastado en generales.
+            // Si el súper está inactivo, limitSuper es 0.
+            const saldoTotal = totalIngresos - (limitSuper + realGeneral);
             
             const saldoTotalEl = document.getElementById('saldo-total');
             saldoTotalEl.textContent = formatQ(saldoTotal);
             saldoTotalEl.className = `text-xl font-bold font-mono ${saldoTotal >= 0 ? 'text-[#86EFAC]' : 'text-[#F87171]'}`;
+            
+            // Actualizar estilo del botón Súper
+            const btnSuper = document.getElementById('tab-super');
+            if(!appData.config.superActivo) btnSuper.classList.add('tab-disabled');
+            else btnSuper.classList.remove('tab-disabled');
         }
 
         function renderLists() {
             const container = document.getElementById('lists-container');
             container.innerHTML = '';
+            
+            if (activeTab === 'super' && !appData.config.superActivo) {
+                container.innerHTML = `
+                <div class="md3-card p-8 text-center border border-[#4A4458] border-dashed">
+                    <span class="material-symbols-outlined text-4xl text-[#938F99] mb-2">shopping_cart_off</span>
+                    <h3 class="text-[#E6E1E5] font-bold">Súper Deshabilitado</h3>
+                    <p class="text-sm text-[#938F99] mt-2">Esta sección está apagada para la quincena actual. Enciéndela en el panel de control superior si necesitas realizar compras de supermercado.</p>
+                </div>`;
+                return;
+            }
+
             const hideBought = document.getElementById('toggle-pendientes').checked;
             
             Object.keys(appData[activeTab]).forEach(cat => {
-                const conf = categoryStyles[cat];
+                const conf = categoryStyles[cat] || { title: cat, icon: 'list', color: '#fff' };
                 let subtotalReal = 0;
                 appData[activeTab][cat].forEach(i => subtotalReal += i.actual);
 
@@ -341,8 +400,13 @@
             if(!confirm("¿Seguro que deseas Cerrar la Quincena? \n\nTus ingresos y gastos volverán a Q0.00, pero todos los artículos nuevos quedarán guardados en tu plantilla para la siguiente quincena.")) return;
 
             let totalS = 0, totalG = 0;
-            Object.keys(appData.super).forEach(c => appData.super[c].forEach(i => totalS += i.actual));
             Object.keys(appData.general).forEach(c => appData.general[c].forEach(i => totalG += i.actual));
+            
+            // Solo se suma el súper si estuvo activo
+            if(appData.config.superActivo) {
+                Object.keys(appData.super).forEach(c => appData.super[c].forEach(i => totalS += i.actual));
+            }
+
             const totalIngresos = (appData.config.andres || 0) + (appData.config.adriana || 0);
 
             const record = {
@@ -356,11 +420,15 @@
 
             historyData.unshift(record);
 
-            ['super', 'general'].forEach(v => {
-                Object.keys(appData[v]).forEach(c => {
-                    appData[v][c].forEach(item => { item.actual = 0; item.checked = false; });
-                });
+            // Reiniciar valores, ignorando el súper si estaba apagado
+            Object.keys(appData.general).forEach(c => {
+                appData.general[c].forEach(item => { item.actual = 0; item.checked = false; });
             });
+            if(appData.config.superActivo) {
+                Object.keys(appData.super).forEach(c => {
+                    appData.super[c].forEach(item => { item.actual = 0; item.checked = false; });
+                });
+            }
 
             saveLocal();
             document.getElementById('toggle-pendientes').checked = false;
@@ -414,10 +482,16 @@
             const icon = document.getElementById('fab-icon'), spinner = document.getElementById('fab-spinner');
             icon.style.display = 'none'; spinner.style.display = 'block';
 
+            // Filtrar datos enviados según el estado del Súper
+            const dataToSync = JSON.parse(JSON.stringify(appData));
+            if(!appData.config.superActivo) {
+                delete dataToSync.super; // No enviar el súper a Google Sheets si está apagado
+            }
+
             const payload = {
                 tipo: cerrarRecord ? "cierre" : "sincronizacion",
                 budgetName: document.getElementById('budget-name').value || 'Quincena',
-                data: appData,
+                data: dataToSync,
                 resumen: cerrarRecord
             };
 
@@ -431,7 +505,10 @@
             finally { icon.style.display = 'block'; spinner.style.display = 'none'; }
         }
 
-        document.addEventListener('DOMContentLoaded', () => { switchTab('super'); });
+        document.addEventListener('DOMContentLoaded', () => { 
+            switchTab('super'); 
+            updateLogic(); // Forzar lógica inicial para el botón apagado
+        });
     </script>
 </body>
 </html>
