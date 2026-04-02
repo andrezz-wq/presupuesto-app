@@ -165,17 +165,14 @@
     <div id="snackbar">Acción completada</div>
 
     <script>
-        const GOOGLE_SCRIPT_URL = 'PEGAR_AQUI_TU_ENLACE';
+        // CONFIGURACIÓN DE URL ACTUALIZADA
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby6wy-vP9t-C1iQldvJwC-qDfeL-04u-663-QrQN-r2QgQxeEJaMeCsxoyQAe3TUCu_/exec';
         
         const defaultData = {
             config: { andres: 2841.00, adriana: 1000.00, presupuestoSuper: 900.00, superActivo: true },
-            facturasPendientes: [], // NUEVO ESTADO PARA URLS DE DRIVE
-            super: {
-                insumos: [], comida: [], casa: []
-            },
-            general: {
-                transferencias: [], efectivo: [], cuenta_transitoria: []
-            }
+            facturasPendientes: [], 
+            super: { insumos: [], comida: [], casa: [] },
+            general: { transferencias: [], efectivo: [], cuenta_transitoria: [] }
         };
 
         const categoryStyles = {
@@ -190,7 +187,7 @@
         let appData = JSON.parse(localStorage.getItem('budgetAppData_v6')) || defaultData;
         let historyData = JSON.parse(localStorage.getItem('budgetHistory_v2')) || [];
         let activeTab = 'super';
-        let facturaDataTemporal = []; // Para el modal
+        let facturaDataTemporal = []; 
         let facturaUrlTemporal = "";
 
         if(!appData.config) appData.config = defaultData.config;
@@ -236,7 +233,6 @@
                 document.getElementById('view-historial').classList.add('hidden');
                 document.getElementById('fab-sync').style.display = 'flex';
                 
-                // Mostrar/Ocultar botón de escanear según la vista
                 if(btnScan) btnScan.style.display = tabName === 'super' ? 'flex' : 'none';
                 
                 renderLists();
@@ -388,15 +384,11 @@
             }
         }
 
-        // ==========================================
-        // NUEVA LÓGICA DE ESCANEO DE FACTURAS (FEL)
-        // ==========================================
-        
         function procesarArchivoFactura(e) {
             const file = e.target.files[0];
             if(!file) return;
             
-            if(file.size > 5 * 1024 * 1024) { // Limite de 5MB por seguridad
+            if(file.size > 5 * 1024 * 1024) {
                 alert("El archivo es muy pesado. Sube una imagen/PDF menor a 5MB.");
                 return;
             }
@@ -409,25 +401,13 @@
                 enviarFacturaGemini(file.name, file.type, base64Data);
             };
             reader.readAsDataURL(file);
-            e.target.value = ''; // Limpiar input
+            e.target.value = ''; 
         }
 
         async function enviarFacturaGemini(fileName, mimeType, base64Data) {
-            if(GOOGLE_SCRIPT_URL === 'PEGAR_AQUI_TU_ENLACE') {
-                document.getElementById('loader-factura').classList.add('hidden');
-                showSnackbar("Falta configurar GOOGLE_SCRIPT_URL");
-                return;
-            }
-
-            const payload = {
-                tipo: "upload_factura",
-                fileName: fileName,
-                mimeType: mimeType,
-                base64Data: base64Data
-            };
+            const payload = { tipo: "upload_factura", fileName: fileName, mimeType: mimeType, base64Data: base64Data };
 
             try {
-                // ELIMINADO: mode: 'no-cors' para poder leer el JSON de respuesta
                 const response = await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -481,7 +461,6 @@
                     </div>`;
                 });
             }
-            
             document.getElementById('modal-factura').classList.remove('hidden');
         }
 
@@ -527,8 +506,6 @@
             showSnackbar(`${count} productos inyectados al Súper`);
         }
 
-        // ==========================================
-
         function cerrarQuincena() {
             if(!confirm("¿Seguro que deseas Cerrar la Quincena? \n\nTus ingresos y gastos volverán a Q0.00, pero la plantilla se conserva.")) return;
             let totalG = 0;
@@ -536,7 +513,6 @@
             
             const totalIngresos = (appData.config.andres || 0) + (appData.config.adriana || 0);
             
-            // Adjuntamos facturas y luego las limpiamos
             const record = {
                 id: Date.now(),
                 fecha: new Date().toLocaleDateString('es-GT'),
@@ -544,7 +520,7 @@
                 ingresos: totalIngresos,
                 gastos: totalG,
                 ahorro: totalIngresos - totalG,
-                facturas: [...appData.facturasPendientes] // Copia de los links
+                facturas: [...appData.facturasPendientes] 
             };
             
             historyData.unshift(record);
@@ -558,9 +534,7 @@
                 });
             }
 
-            // Purgar historial de facturas pendientes
             appData.facturasPendientes = [];
-
             saveLocal();
             document.getElementById('toggle-pendientes').checked = false;
             showSnackbar("Quincena Cerrada y Guardada en Historial");
@@ -618,7 +592,6 @@
         };
 
         async function syncData(cerrarRecord = null) {
-            if(GOOGLE_SCRIPT_URL === 'PEGAR_AQUI_TU_ENLACE') { showSnackbar("Configura la URL de Google"); return; }
             const icon = document.getElementById('fab-icon'), spinner = document.getElementById('fab-spinner');
             icon.style.display = 'none'; spinner.style.display = 'block';
 
@@ -633,8 +606,6 @@
             };
             
             try {
-                // ELIMINADO: mode: 'no-cors' para lectura correcta de éxito/error.
-                // Apps script redirecciona automáticamente.
                 await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST', 
                     headers: { 'Content-Type': 'application/json' },
