@@ -60,10 +60,28 @@
         <button onclick="switchTab('historial')" id="tab-historial" class="tab-btn">📊 Historial</button>
     </div>
 
+    <div id="modal-factura" class="hidden fixed inset-0 bg-black bg-opacity-70 z-[60] flex items-center justify-center p-4">
+        <div class="md3-card w-full max-w-md max-h-[80vh] flex flex-col border border-[#4A4458]">
+            <div class="p-4 border-b border-[#4A4458] flex justify-between items-center">
+                <h2 class="text-lg font-bold text-[#E6E1E5]">Revisar Productos</h2>
+                <button onclick="cerrarModalFactura()" class="text-[#938F99]"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            <div id="modal-productos-list" class="p-4 overflow-y-auto flex-1 space-y-3">
+                </div>
+            <div class="p-4 border-t border-[#4A4458]">
+                <button onclick="aprobarInyeccionFactura()" class="w-full bg-[#D0BCFF] text-[#381E72] font-bold py-3 rounded-xl transition-colors">Aprobar e Inyectar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="loader-factura" class="hidden fixed inset-0 bg-black bg-opacity-80 z-[70] flex flex-col items-center justify-center">
+        <span class="material-symbols-outlined text-5xl text-[#D0BCFF] spinner mb-4" style="display:block">progress_activity</span>
+        <p class="text-[#E6E1E5] font-semibold">Analizando factura con IA...</p>
+    </div>
+
     <div id="view-active">
         
         <div class="md3-card p-5 mb-6 border border-[#4A4458]">
-            
             <div class="grid grid-cols-2 gap-4 mb-4 pb-4 border-b border-[#4A4458]">
                 <div>
                     <label class="text-xs text-[#CAC4D0] block mb-1">Sueldo Andrés</label>
@@ -104,7 +122,15 @@
         </div>
 
         <div class="flex justify-between items-center mb-4 px-2">
-            <h2 class="text-sm font-semibold text-[#E6E1E5] uppercase tracking-wide">Desglose Quincenal</h2>
+            <div class="flex items-center gap-3">
+                <h2 class="text-sm font-semibold text-[#E6E1E5] uppercase tracking-wide">Desglose Quincenal</h2>
+                <input type="file" id="input-factura" class="hidden" accept="image/*,application/pdf" onchange="procesarArchivoFactura(event)">
+                <button onclick="document.getElementById('input-factura').click()" id="btn-scan-factura" class="bg-[#4A4458] text-[#D0BCFF] p-1.5 rounded-lg flex items-center gap-1 hover:bg-[#D0BCFF] hover:text-[#381E72] transition-colors">
+                    <span class="material-symbols-outlined text-[18px]">document_scanner</span>
+                    <span class="text-xs font-bold">Escanear FEL</span>
+                </button>
+            </div>
+            
             <div class="flex items-center gap-2">
                 <span class="text-xs text-[#CAC4D0]">Ocultar Comprados</span>
                 <label class="toggle-switch">
@@ -139,52 +165,16 @@
     <div id="snackbar">Acción completada</div>
 
     <script>
-        // CONFIGURACIÓN INTEGADA
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby6wy-vP9t-C1iQldvJwC-qDfeL-04u-663-QrQN-r2QgQxeEJaMeCsxoyQAe3TUCu_/exec';
-
+        const GOOGLE_SCRIPT_URL = 'PEGAR_AQUI_TU_ENLACE';
+        
         const defaultData = {
             config: { andres: 2841.00, adriana: 1000.00, presupuestoSuper: 900.00, superActivo: true },
+            facturasPendientes: [], // NUEVO ESTADO PARA URLS DE DRIVE
             super: {
-                insumos: [
-                    { id: "i1", nombre: "Shampoo", budget: 70.00, actual: 0.00, checked: false },
-                    { id: "i3", nombre: "Pasta dental", budget: 100.00, actual: 0.00, checked: false },
-                    { id: "i5", nombre: "Jabón de Cuerpo / Manos", budget: 51.00, actual: 0.00, checked: false },
-                    { id: "i7", nombre: "Desodorantes", budget: 140.00, actual: 0.00, checked: false },
-                    { id: "i9", nombre: "Rasuradoras", budget: 30.00, actual: 0.00, checked: false },
-                    { id: "i11", nombre: "Toallitas Varias", budget: 40.50, actual: 0.00, checked: false }
-                ],
-                comida: [
-                    { id: "c1", nombre: "Queso Crema", budget: 64.00, actual: 0.00, checked: false },
-                    { id: "c2", nombre: "Yogurt Griego", budget: 42.00, actual: 0.00, checked: false },
-                    { id: "c3", nombre: "Avena", budget: 10.45, actual: 0.00, checked: false },
-                    { id: "c5", nombre: "Pan Sandwich", budget: 21.00, actual: 0.00, checked: false },
-                    { id: "c6", nombre: "Leche", budget: 24.00, actual: 0.00, checked: false }
-                ],
-                casa: [
-                    { id: "h1", nombre: "Papel de Baño", budget: 34.00, actual: 0.00, checked: false },
-                    { id: "h2", nombre: "Jabón de Ropa", budget: 17.00, actual: 0.00, checked: false },
-                    { id: "h3", nombre: "Suavitel", budget: 17.00, actual: 0.00, checked: false },
-                    { id: "h4", nombre: "Aceite", budget: 15.00, actual: 0.00, checked: false },
-                    { id: "h5", nombre: "Jabón de Trastos", budget: 15.00, actual: 0.00, checked: false }
-                ]
+                insumos: [], comida: [], casa: []
             },
             general: {
-                transferencias: [
-                    { id: "t1", nombre: "CASA DESARROLLOS", budget: 700.00, actual: 0.00, checked: false },
-                    { id: "t2", nombre: "AHORRO PERPETUO", budget: 250.00, actual: 0.00, checked: false }
-                ],
-                efectivo: [
-                    { id: "e1", nombre: "CASA MARY", budget: 300.00, actual: 0.00, checked: false },
-                    { id: "e2", nombre: "COMIDA MARY", budget: 100.00, actual: 0.00, checked: false },
-                    { id: "e3", nombre: "GASTO SEMANA", budget: 400.00, actual: 0.00, checked: false },
-                    { id: "e4", nombre: "GASTO FIN DE SEMANA", budget: 600.00, actual: 0.00, checked: false }
-                ],
-                cuenta_transitoria: [
-                    { id: "c1", nombre: "MOTOCICLETA", budget: 100.00, actual: 0.00, checked: false },
-                    { id: "c2", nombre: "INTERNET CLARO", budget: 120.00, actual: 0.00, checked: false },
-                    { id: "c3", nombre: "INTERNET TIGO", budget: 390.00, actual: 0.00, checked: false },
-                    { id: "c4", nombre: "VISA CUOTAS", budget: 150.00, actual: 0.00, checked: false }
-                ]
+                transferencias: [], efectivo: [], cuenta_transitoria: []
             }
         };
 
@@ -197,13 +187,15 @@
             cuenta_transitoria: { title: 'Cuenta Transitoria', icon: 'account_balance', color: '#6EE7B7' }
         };
 
-        let appData = JSON.parse(localStorage.getItem('budgetAppData_v5')) || defaultData;
+        let appData = JSON.parse(localStorage.getItem('budgetAppData_v6')) || defaultData;
         let historyData = JSON.parse(localStorage.getItem('budgetHistory_v2')) || [];
         let activeTab = 'super';
+        let facturaDataTemporal = []; // Para el modal
+        let facturaUrlTemporal = "";
 
         if(!appData.config) appData.config = defaultData.config;
         if(appData.config.superActivo === undefined) appData.config.superActivo = true;
-        if(!appData.general.transferencias) appData.general = defaultData.general;
+        if(!appData.facturasPendientes) appData.facturasPendientes = [];
 
         document.getElementById('ingreso-andres').value = appData.config.andres;
         document.getElementById('ingreso-adriana').value = appData.config.adriana;
@@ -211,7 +203,7 @@
         document.getElementById('toggle-super-activo').checked = appData.config.superActivo;
 
         function saveLocal() {
-            localStorage.setItem('budgetAppData_v5', JSON.stringify(appData));
+            localStorage.setItem('budgetAppData_v6', JSON.stringify(appData));
             localStorage.setItem('budgetHistory_v2', JSON.stringify(historyData));
             updateLogic();
         }
@@ -225,6 +217,8 @@
             btnSuper.classList.toggle('tab-active', tabName === 'super');
             document.getElementById('tab-general').classList.toggle('tab-active', tabName === 'general');
             document.getElementById('tab-historial').classList.toggle('tab-active', tabName === 'historial');
+            
+            const btnScan = document.getElementById('btn-scan-factura');
             
             if(!appData.config.superActivo && tabName !== 'historial') {
                 btnSuper.classList.add('tab-disabled');
@@ -241,6 +235,10 @@
                 document.getElementById('view-active').classList.remove('hidden');
                 document.getElementById('view-historial').classList.add('hidden');
                 document.getElementById('fab-sync').style.display = 'flex';
+                
+                // Mostrar/Ocultar botón de escanear según la vista
+                if(btnScan) btnScan.style.display = tabName === 'super' ? 'flex' : 'none';
+                
                 renderLists();
             }
             updateLogic();
@@ -253,7 +251,7 @@
             appData.config.superActivo = document.getElementById('toggle-super-activo').checked;
             
             saveLocal();
-            if(activeTab === 'super') renderLists(); 
+            if(activeTab === 'super') renderLists();
         }
 
         function updateLogic() {
@@ -279,12 +277,9 @@
             const saldoSuperEl = document.getElementById('saldo-super');
             saldoSuperEl.textContent = formatQ(diffSuper);
             saldoSuperEl.className = `text-xl font-bold font-mono ${diffSuper >= 0 ? 'text-[#86EFAC]' : 'text-[#F87171]'}`;
-
+            
             const totalIngresos = (appData.config.andres || 0) + (appData.config.adriana || 0);
-            
-            // EL SÚPER SE IGNORA CONTABLEMENTE EN LA LIQUIDEZ GLOBAL
             const saldoTotal = totalIngresos - realGeneral;
-            
             const saldoTotalEl = document.getElementById('saldo-total');
             saldoTotalEl.textContent = formatQ(saldoTotal);
             saldoTotalEl.className = `text-xl font-bold font-mono ${saldoTotal >= 0 ? 'text-[#86EFAC]' : 'text-[#F87171]'}`;
@@ -303,7 +298,7 @@
                 <div class="md3-card p-8 text-center border border-[#4A4458] border-dashed">
                     <span class="material-symbols-outlined text-4xl text-[#938F99] mb-2">shopping_cart_off</span>
                     <h3 class="text-[#E6E1E5] font-bold">Súper Deshabilitado</h3>
-                    <p class="text-sm text-[#938F99] mt-2">Esta sección está apagada para la quincena actual. Enciéndela en el panel de control superior si necesitas utilizarla como guía de supermercado.</p>
+                    <p class="text-sm text-[#938F99] mt-2">Esta sección está apagada para la quincena actual.</p>
                 </div>`;
                 return;
             }
@@ -355,7 +350,6 @@
                         </button>
                     </form>
                 </div></div>`;
-                
                 container.innerHTML += catHTML;
             });
         }
@@ -363,17 +357,9 @@
         function toggleCheck(vista, cat, index) { 
             let item = appData[vista][cat][index];
             item.checked = !item.checked; 
-            
-            if (item.checked) {
-                if (item.actual === 0) {
-                    item.actual = item.budget;
-                }
-            } else {
-                item.actual = 0;
-            }
-            
-            saveLocal(); 
-            renderLists(); 
+            if (item.checked) { if (item.actual === 0) item.actual = item.budget; } 
+            else { item.actual = 0; }
+            saveLocal(); renderLists(); 
         }
         
         function updateActual(vista, cat, index, value) { 
@@ -396,30 +382,171 @@
         }
 
         function deleteItem(vista, cat, index) {
-            if(confirm("¿Estás seguro de que deseas borrar permanentemente este artículo de tu plantilla?")) {
+            if(confirm("¿Seguro que deseas borrar permanentemente este artículo?")) {
                 appData[vista][cat].splice(index, 1);
                 saveLocal(); renderLists();
             }
         }
 
-        function cerrarQuincena() {
-            if(!confirm("¿Seguro que deseas Cerrar la Quincena? \n\nTus ingresos y gastos volverán a Q0.00, pero todos los artículos nuevos quedarán guardados en tu plantilla para la siguiente quincena.")) return;
+        // ==========================================
+        // NUEVA LÓGICA DE ESCANEO DE FACTURAS (FEL)
+        // ==========================================
+        
+        function procesarArchivoFactura(e) {
+            const file = e.target.files[0];
+            if(!file) return;
+            
+            if(file.size > 5 * 1024 * 1024) { // Limite de 5MB por seguridad
+                alert("El archivo es muy pesado. Sube una imagen/PDF menor a 5MB.");
+                return;
+            }
 
+            document.getElementById('loader-factura').classList.remove('hidden');
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const base64Data = event.target.result.split(',')[1];
+                enviarFacturaGemini(file.name, file.type, base64Data);
+            };
+            reader.readAsDataURL(file);
+            e.target.value = ''; // Limpiar input
+        }
+
+        async function enviarFacturaGemini(fileName, mimeType, base64Data) {
+            if(GOOGLE_SCRIPT_URL === 'PEGAR_AQUI_TU_ENLACE') {
+                document.getElementById('loader-factura').classList.add('hidden');
+                showSnackbar("Falta configurar GOOGLE_SCRIPT_URL");
+                return;
+            }
+
+            const payload = {
+                tipo: "upload_factura",
+                fileName: fileName,
+                mimeType: mimeType,
+                base64Data: base64Data
+            };
+
+            try {
+                // ELIMINADO: mode: 'no-cors' para poder leer el JSON de respuesta
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                    redirect: 'follow' 
+                });
+                
+                const result = await response.json();
+                
+                document.getElementById('loader-factura').classList.add('hidden');
+
+                if(result.status === "error") {
+                    alert("Error analizando: " + result.message);
+                    return;
+                }
+
+                facturaUrlTemporal = result.fileUrl;
+                facturaDataTemporal = result.productos;
+                renderModalFactura();
+                
+            } catch (error) {
+                document.getElementById('loader-factura').classList.add('hidden');
+                alert("Error de conexión al enviar factura.");
+                console.error(error);
+            }
+        }
+
+        function renderModalFactura() {
+            const list = document.getElementById('modal-productos-list');
+            list.innerHTML = '';
+            
+            if(!facturaDataTemporal || facturaDataTemporal.length === 0) {
+                list.innerHTML = '<p class="text-[#938F99] text-center">No se detectaron productos legibles.</p>';
+            } else {
+                facturaDataTemporal.forEach((prod, index) => {
+                    list.innerHTML += `
+                    <div class="bg-[#36343B] p-3 rounded-xl border border-[#4A4458] relative" id="modal-item-${index}">
+                        <button onclick="eliminarItemModal(${index})" class="absolute top-2 right-2 text-[#938F99] hover:text-[#F87171]"><span class="material-symbols-outlined text-sm">close</span></button>
+                        <input type="text" id="modal-nombre-${index}" value="${prod.nombre}" class="bg-transparent border-b border-[#4A4458] text-[#E6E1E5] text-sm w-11/12 outline-none mb-2 focus:border-[#D0BCFF]">
+                        <div class="flex gap-2">
+                            <select id="modal-cat-${index}" class="bg-[#1C1B1F] text-[#CAC4D0] text-xs p-1 rounded border border-[#4A4458] outline-none">
+                                <option value="insumos" ${prod.categoria === 'insumos' ? 'selected' : ''}>Insumos</option>
+                                <option value="comida" ${prod.categoria === 'comida' ? 'selected' : ''}>Comida</option>
+                                <option value="casa" ${prod.categoria === 'casa' ? 'selected' : ''}>Casa</option>
+                            </select>
+                            <div class="flex items-center flex-1">
+                                <span class="text-[#938F99] text-xs mr-1">Q</span>
+                                <input type="number" id="modal-precio-${index}" step="0.01" value="${prod.budget}" class="bg-[#1C1B1F] text-[#E6E1E5] text-xs p-1 rounded border border-[#4A4458] w-full text-right outline-none">
+                            </div>
+                        </div>
+                    </div>`;
+                });
+            }
+            
+            document.getElementById('modal-factura').classList.remove('hidden');
+        }
+
+        function eliminarItemModal(index) {
+            document.getElementById(`modal-item-${index}`).style.display = 'none';
+            facturaDataTemporal[index].borrado = true;
+        }
+
+        function cerrarModalFactura() {
+            document.getElementById('modal-factura').classList.add('hidden');
+            facturaDataTemporal = [];
+            facturaUrlTemporal = "";
+        }
+
+        function aprobarInyeccionFactura() {
+            if(!facturaDataTemporal) return;
+            
+            let count = 0;
+            facturaDataTemporal.forEach((prod, index) => {
+                if(prod.borrado) return;
+                
+                const finalNombre = document.getElementById(`modal-nombre-${index}`).value;
+                const finalCat = document.getElementById(`modal-cat-${index}`).value;
+                const finalPrecio = parseFloat(document.getElementById(`modal-precio-${index}`).value) || 0;
+                
+                appData.super[finalCat].push({
+                    id: 'f_' + Date.now() + Math.random(),
+                    nombre: "*(FEL) " + finalNombre,
+                    budget: finalPrecio,
+                    actual: finalPrecio,
+                    checked: true
+                });
+                count++;
+            });
+            
+            if(facturaUrlTemporal) {
+                appData.facturasPendientes.push(facturaUrlTemporal);
+            }
+            
+            saveLocal();
+            renderLists();
+            cerrarModalFactura();
+            showSnackbar(`${count} productos inyectados al Súper`);
+        }
+
+        // ==========================================
+
+        function cerrarQuincena() {
+            if(!confirm("¿Seguro que deseas Cerrar la Quincena? \n\nTus ingresos y gastos volverán a Q0.00, pero la plantilla se conserva.")) return;
             let totalG = 0;
             Object.keys(appData.general).forEach(c => appData.general[c].forEach(i => totalG += i.actual));
-
+            
             const totalIngresos = (appData.config.andres || 0) + (appData.config.adriana || 0);
-
-            // EL SÚPER SE IGNORA CONTABLEMENTE EN EL HISTORIAL
+            
+            // Adjuntamos facturas y luego las limpiamos
             const record = {
                 id: Date.now(),
                 fecha: new Date().toLocaleDateString('es-GT'),
                 nombre: document.getElementById('budget-name').value || 'Quincena',
                 ingresos: totalIngresos,
                 gastos: totalG,
-                ahorro: totalIngresos - totalG
+                ahorro: totalIngresos - totalG,
+                facturas: [...appData.facturasPendientes] // Copia de los links
             };
-
+            
             historyData.unshift(record);
 
             Object.keys(appData.general).forEach(c => {
@@ -430,6 +557,9 @@
                     appData.super[c].forEach(item => { item.actual = 0; item.checked = false; });
                 });
             }
+
+            // Purgar historial de facturas pendientes
+            appData.facturasPendientes = [];
 
             saveLocal();
             document.getElementById('toggle-pendientes').checked = false;
@@ -442,10 +572,18 @@
             const container = document.getElementById('historial-container');
             container.innerHTML = '';
             if(historyData.length === 0) {
-                container.innerHTML = `<p class="text-center text-[#938F99]">Aún no hay quincenas cerradas.</p>`; return;
+                container.innerHTML = `<p class="text-center text-[#938F99]">Aún no hay quincenas cerradas.</p>`;
+                return;
             }
 
             historyData.forEach(h => {
+                let linksHTML = '';
+                if(h.facturas && h.facturas.length > 0) {
+                    linksHTML = `<div class="mt-3 border-t border-[#4A4458] pt-2 flex gap-2 flex-wrap">
+                        ${h.facturas.map((url, i) => `<a href="${url}" target="_blank" class="text-xs text-[#D0BCFF] bg-[#381E72] px-2 py-1 rounded">Factura ${i+1}</a>`).join('')}
+                    </div>`;
+                }
+
                 container.innerHTML += `
                 <div class="md3-card p-4 border border-[#4A4458]">
                     <div class="flex justify-between items-start border-b border-[#4A4458] pb-2 mb-2">
@@ -462,6 +600,7 @@
                         <span class="text-[#CAC4D0]">Ingresos: ${formatQ(h.ingresos)}</span>
                         <span class="text-[#F2B8B5]">Gastos: ${formatQ(h.gastos)}</span>
                     </div>
+                    ${linksHTML}
                 </div>`;
             });
         }
@@ -484,9 +623,7 @@
             icon.style.display = 'none'; spinner.style.display = 'block';
 
             const dataToSync = JSON.parse(JSON.stringify(appData));
-            if(!appData.config.superActivo) {
-                delete dataToSync.super; 
-            }
+            if(!appData.config.superActivo) { delete dataToSync.super; }
 
             const payload = {
                 tipo: cerrarRecord ? "cierre" : "sincronizacion",
@@ -494,15 +631,23 @@
                 data: dataToSync,
                 resumen: cerrarRecord
             };
-
+            
             try {
+                // ELIMINADO: mode: 'no-cors' para lectura correcta de éxito/error.
+                // Apps script redirecciona automáticamente.
                 await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                    redirect: 'follow'
                 });
                 showSnackbar(cerrarRecord ? "Resumen enviado a Sheets" : "Sincronizado con Sheets");
-            } catch (error) { showSnackbar("Error de conexión"); } 
-            finally { icon.style.display = 'block'; spinner.style.display = 'none'; }
+            } catch (error) { 
+                showSnackbar("Error de conexión");
+            } finally { 
+                icon.style.display = 'block';
+                spinner.style.display = 'none'; 
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => { 
