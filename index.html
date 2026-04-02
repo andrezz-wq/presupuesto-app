@@ -165,7 +165,6 @@
     <div id="snackbar">Acción completada</div>
 
     <script>
-        // CONFIGURACIÓN DE URL ACTUALIZADA
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby6wy-vP9t-C1iQldvJwC-qDfeL-04u-663-QrQN-r2QgQxeEJaMeCsxoyQAe3TUCu_/exec';
         
         const defaultData = {
@@ -410,7 +409,7 @@
             try {
                 const response = await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // CORRECCIÓN PARA EVITAR CORS PREFLIGHT
                     body: JSON.stringify(payload),
                     redirect: 'follow' 
                 });
@@ -608,7 +607,7 @@
             try {
                 await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // CORRECCIÓN PARA EVITAR CORS PREFLIGHT
                     body: JSON.stringify(payload),
                     redirect: 'follow'
                 });
