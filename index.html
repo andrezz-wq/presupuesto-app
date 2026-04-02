@@ -404,35 +404,40 @@
         }
 
         async function enviarFacturaGemini(fileName, mimeType, base64Data) {
-            const payload = { tipo: "upload_factura", fileName: fileName, mimeType: mimeType, base64Data: base64Data };
+    const payload = { tipo: "upload_factura", fileName: fileName, mimeType: mimeType, base64Data: base64Data };
 
-            try {
-                const response = await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // CORRECCIÓN PARA EVITAR CORS PREFLIGHT
-                    body: JSON.stringify(payload),
-                    redirect: 'follow' 
-                });
-                
-                const result = await response.json();
-                
-                document.getElementById('loader-factura').classList.add('hidden');
+    try {
+        const response = await fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify(payload),
+            redirect: 'follow' 
+        });
+        
+        const responseText = await response.text(); 
+        document.getElementById('loader-factura').classList.add('hidden');
 
-                if(result.status === "error") {
-                    alert("Error analizando: " + result.message);
-                    return;
-                }
-
-                facturaUrlTemporal = result.fileUrl;
-                facturaDataTemporal = result.productos;
-                renderModalFactura();
-                
-            } catch (error) {
-                document.getElementById('loader-factura').classList.add('hidden');
-                alert("Error de conexión al enviar factura.");
-                console.error(error);
+        try {
+            const result = JSON.parse(responseText);
+            
+            if(result.status === "error") {
+                alert("Error del Backend: " + result.message);
+                return;
             }
+
+            facturaUrlTemporal = result.fileUrl;
+            facturaDataTemporal = result.productos;
+            renderModalFactura();
+            
+        } catch (parseError) {
+            alert("Fallo de lectura. Google no devolvió JSON. Respuesta cruda: " + responseText.substring(0, 150));
         }
+        
+    } catch (error) {
+        document.getElementById('loader-factura').classList.add('hidden');
+        alert("Fallo de Red/CORS: " + error.name + " - " + error.message);
+    }
+}
 
         function renderModalFactura() {
             const list = document.getElementById('modal-productos-list');
