@@ -60,27 +60,10 @@
         <button onclick="switchTab('historial')" id="tab-historial" class="tab-btn">📊 Historial</button>
     </div>
 
-    <div id="modal-factura" class="hidden fixed inset-0 bg-black bg-opacity-70 z-[60] flex items-center justify-center p-4">
-        <div class="md3-card w-full max-w-md max-h-[80vh] flex flex-col border border-[#4A4458] shadow-2xl">
-            <div class="p-4 border-b border-[#4A4458] flex justify-between items-center">
-                <h2 class="text-lg font-bold text-[#E6E1E5]">Confirmar Artículos FEL</h2>
-                <button onclick="cerrarModalFactura()" class="text-[#938F99]"><span class="material-symbols-outlined">close</span></button>
-            </div>
-            <div id="modal-productos-list" class="p-4 overflow-y-auto flex-1 space-y-3"></div>
-            <div class="p-4 border-t border-[#4A4458]">
-                <button onclick="aprobarInyeccionFactura()" class="w-full bg-[#D0BCFF] text-[#381E72] font-bold py-4 rounded-xl shadow-lg transition-transform active:scale-95">Inyectar al Súper</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="loader-factura" class="hidden fixed inset-0 bg-black bg-opacity-80 z-[70] flex flex-col items-center justify-center">
-        <span class="material-symbols-outlined text-6xl text-[#D0BCFF] spinner mb-4" style="display:block">progress_activity</span>
-        <p class="text-[#E6E1E5] font-bold text-xl">Analizando FEL con IA...</p>
-        <p class="text-[#938F99] text-sm mt-2">Esto puede tardar unos segundos</p>
-    </div>
-
     <div id="view-active">
+        
         <div class="md3-card p-5 mb-6 border border-[#4A4458]">
+            
             <div class="grid grid-cols-2 gap-4 mb-4 pb-4 border-b border-[#4A4458]">
                 <div>
                     <label class="text-xs text-[#CAC4D0] block mb-1">Sueldo Andrés</label>
@@ -121,15 +104,7 @@
         </div>
 
         <div class="flex justify-between items-center mb-4 px-2">
-            <div class="flex items-center gap-3">
-                <h2 class="text-sm font-semibold text-[#E6E1E5] uppercase tracking-wide">Desglose Quincenal</h2>
-                <input type="file" id="input-factura" class="hidden" accept="image/*,application/pdf" onchange="procesarArchivoFactura(event)">
-                <button onclick="document.getElementById('input-factura').click()" id="btn-scan-factura" class="bg-[#4A4458] text-[#D0BCFF] p-2 rounded-lg flex items-center gap-2 hover:bg-[#D0BCFF] hover:text-[#381E72] transition-colors shadow-md">
-                    <span class="material-symbols-outlined text-[20px]">document_scanner</span>
-                    <span class="text-xs font-bold">Escanear FEL</span>
-                </button>
-            </div>
-            
+            <h2 class="text-sm font-semibold text-[#E6E1E5] uppercase tracking-wide">Desglose Quincenal</h2>
             <div class="flex items-center gap-2">
                 <span class="text-xs text-[#CAC4D0]">Ocultar Comprados</span>
                 <label class="toggle-switch">
@@ -141,7 +116,7 @@
 
         <div id="lists-container" class="space-y-6 mb-8"></div>
 
-        <button onclick="cerrarQuincena()" class="w-full bg-[#381E72] hover:bg-[#4A4458] text-[#D0BCFF] font-bold py-4 rounded-xl border border-[#D0BCFF] transition-colors flex items-center justify-center gap-2 shadow-lg mb-10">
+        <button onclick="cerrarQuincena()" class="w-full bg-[#381E72] hover:bg-[#4A4458] text-[#D0BCFF] font-bold py-4 rounded-xl border border-[#D0BCFF] transition-colors flex items-center justify-center gap-2">
             <span class="material-symbols-outlined">inventory_2</span> CERRAR Y GUARDAR QUINCENA
         </button>
     </div>
@@ -154,7 +129,7 @@
         <div id="historial-container" class="space-y-4"></div>
     </div>
 
-    <button id="fab-up" class="fab-up" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+    <button id="fab-up" class="fab-up" onclick="window.scrollTo(0,0)">
         <span class="material-symbols-outlined">arrow_upward</span>
     </button>
     <button id="fab-sync" class="fab-main" onclick="syncData()">
@@ -164,13 +139,53 @@
     <div id="snackbar">Acción completada</div>
 
     <script>
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzYoNDT5oix2QG2h3VMY0_hDHZ5JYvDJwWVV6ZyHyhcG08AlC9t2-DgAAgOmTFD1P1A/exec';
-        
+        // CONFIGURACIÓN INTEGADA
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby6wy-vP9t-C1iQldvJwC-qDfeL-04u-663-QrQN-r2QgQxeEJaMeCsxoyQAe3TUCu_/exec';
+
         const defaultData = {
             config: { andres: 2841.00, adriana: 1000.00, presupuestoSuper: 900.00, superActivo: true },
-            facturasPendientes: [],
-            super: { insumos: [], comida: [], casa: [] },
-            general: { transferencias: [], efectivo: [], cuenta_transitoria: [] }
+            super: {
+                insumos: [
+                    { id: "i1", nombre: "Shampoo", budget: 70.00, actual: 0.00, checked: false },
+                    { id: "i3", nombre: "Pasta dental", budget: 100.00, actual: 0.00, checked: false },
+                    { id: "i5", nombre: "Jabón de Cuerpo / Manos", budget: 51.00, actual: 0.00, checked: false },
+                    { id: "i7", nombre: "Desodorantes", budget: 140.00, actual: 0.00, checked: false },
+                    { id: "i9", nombre: "Rasuradoras", budget: 30.00, actual: 0.00, checked: false },
+                    { id: "i11", nombre: "Toallitas Varias", budget: 40.50, actual: 0.00, checked: false }
+                ],
+                comida: [
+                    { id: "c1", nombre: "Queso Crema", budget: 64.00, actual: 0.00, checked: false },
+                    { id: "c2", nombre: "Yogurt Griego", budget: 42.00, actual: 0.00, checked: false },
+                    { id: "c3", nombre: "Avena", budget: 10.45, actual: 0.00, checked: false },
+                    { id: "c5", nombre: "Pan Sandwich", budget: 21.00, actual: 0.00, checked: false },
+                    { id: "c6", nombre: "Leche", budget: 24.00, actual: 0.00, checked: false }
+                ],
+                casa: [
+                    { id: "h1", nombre: "Papel de Baño", budget: 34.00, actual: 0.00, checked: false },
+                    { id: "h2", nombre: "Jabón de Ropa", budget: 17.00, actual: 0.00, checked: false },
+                    { id: "h3", nombre: "Suavitel", budget: 17.00, actual: 0.00, checked: false },
+                    { id: "h4", nombre: "Aceite", budget: 15.00, actual: 0.00, checked: false },
+                    { id: "h5", nombre: "Jabón de Trastos", budget: 15.00, actual: 0.00, checked: false }
+                ]
+            },
+            general: {
+                transferencias: [
+                    { id: "t1", nombre: "CASA DESARROLLOS", budget: 700.00, actual: 0.00, checked: false },
+                    { id: "t2", nombre: "AHORRO PERPETUO", budget: 250.00, actual: 0.00, checked: false }
+                ],
+                efectivo: [
+                    { id: "e1", nombre: "CASA MARY", budget: 300.00, actual: 0.00, checked: false },
+                    { id: "e2", nombre: "COMIDA MARY", budget: 100.00, actual: 0.00, checked: false },
+                    { id: "e3", nombre: "GASTO SEMANA", budget: 400.00, actual: 0.00, checked: false },
+                    { id: "e4", nombre: "GASTO FIN DE SEMANA", budget: 600.00, actual: 0.00, checked: false }
+                ],
+                cuenta_transitoria: [
+                    { id: "c1", nombre: "MOTOCICLETA", budget: 100.00, actual: 0.00, checked: false },
+                    { id: "c2", nombre: "INTERNET CLARO", budget: 120.00, actual: 0.00, checked: false },
+                    { id: "c3", nombre: "INTERNET TIGO", budget: 390.00, actual: 0.00, checked: false },
+                    { id: "c4", nombre: "VISA CUOTAS", budget: 150.00, actual: 0.00, checked: false }
+                ]
+            }
         };
 
         const categoryStyles = {
@@ -182,24 +197,21 @@
             cuenta_transitoria: { title: 'Cuenta Transitoria', icon: 'account_balance', color: '#6EE7B7' }
         };
 
-        let appData = JSON.parse(localStorage.getItem('budgetAppData_v6')) || defaultData;
+        let appData = JSON.parse(localStorage.getItem('budgetAppData_v5')) || defaultData;
         let historyData = JSON.parse(localStorage.getItem('budgetHistory_v2')) || [];
         let activeTab = 'super';
-        let facturaDataTemporal = []; 
-        let facturaUrlTemporal = "";
 
-        // Inicialización de campos
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('ingreso-andres').value = appData.config.andres;
-            document.getElementById('ingreso-adriana').value = appData.config.adriana;
-            document.getElementById('config-super').value = appData.config.presupuestoSuper;
-            document.getElementById('toggle-super-activo').checked = appData.config.superActivo;
-            switchTab('super');
-            updateLogic();
-        });
+        if(!appData.config) appData.config = defaultData.config;
+        if(appData.config.superActivo === undefined) appData.config.superActivo = true;
+        if(!appData.general.transferencias) appData.general = defaultData.general;
+
+        document.getElementById('ingreso-andres').value = appData.config.andres;
+        document.getElementById('ingreso-adriana').value = appData.config.adriana;
+        document.getElementById('config-super').value = appData.config.presupuestoSuper;
+        document.getElementById('toggle-super-activo').checked = appData.config.superActivo;
 
         function saveLocal() {
-            localStorage.setItem('budgetAppData_v6', JSON.stringify(appData));
+            localStorage.setItem('budgetAppData_v5', JSON.stringify(appData));
             localStorage.setItem('budgetHistory_v2', JSON.stringify(historyData));
             updateLogic();
         }
@@ -208,11 +220,18 @@
 
         function switchTab(tabName) {
             activeTab = tabName;
-            document.getElementById('tab-super').classList.toggle('tab-active', tabName === 'super');
+            const btnSuper = document.getElementById('tab-super');
+            
+            btnSuper.classList.toggle('tab-active', tabName === 'super');
             document.getElementById('tab-general').classList.toggle('tab-active', tabName === 'general');
             document.getElementById('tab-historial').classList.toggle('tab-active', tabName === 'historial');
             
-            const btnScan = document.getElementById('btn-scan-factura');
+            if(!appData.config.superActivo && tabName !== 'historial') {
+                btnSuper.classList.add('tab-disabled');
+            } else {
+                btnSuper.classList.remove('tab-disabled');
+            }
+
             if(tabName === 'historial') {
                 document.getElementById('view-active').classList.add('hidden');
                 document.getElementById('view-historial').classList.remove('hidden');
@@ -222,7 +241,6 @@
                 document.getElementById('view-active').classList.remove('hidden');
                 document.getElementById('view-historial').classList.add('hidden');
                 document.getElementById('fab-sync').style.display = 'flex';
-                if(btnScan) btnScan.style.display = tabName === 'super' ? 'flex' : 'none';
                 renderLists();
             }
             updateLogic();
@@ -233,49 +251,111 @@
             appData.config.adriana = parseFloat(document.getElementById('ingreso-adriana').value) || 0;
             appData.config.presupuestoSuper = parseFloat(document.getElementById('config-super').value) || 0;
             appData.config.superActivo = document.getElementById('toggle-super-activo').checked;
+            
             saveLocal();
-            if(activeTab === 'super') renderLists();
+            if(activeTab === 'super') renderLists(); 
         }
 
         function updateLogic() {
-            let realSuper = 0, realGeneral = 0, limitSuper = 0;
+            let realSuper = 0, realGeneral = 0;
+            let limitSuper = 0;
+            
             Object.keys(appData.general).forEach(cat => appData.general[cat].forEach(i => realGeneral += i.actual));
+
             const panelSuper = document.getElementById('panel-super-config');
             if(appData.config.superActivo) {
-                panelSuper.style.opacity = '1'; panelSuper.style.pointerEvents = 'auto';
+                panelSuper.style.opacity = '1';
+                panelSuper.style.pointerEvents = 'auto';
                 limitSuper = appData.config.presupuestoSuper || 0;
                 Object.keys(appData.super).forEach(cat => appData.super[cat].forEach(i => realSuper += i.actual));
             } else {
-                panelSuper.style.opacity = '0.3'; panelSuper.style.pointerEvents = 'none';
+                panelSuper.style.opacity = '0.3';
+                panelSuper.style.pointerEvents = 'none';
+                limitSuper = 0; 
+                realSuper = 0;
             }
+
             const diffSuper = limitSuper - realSuper;
             const saldoSuperEl = document.getElementById('saldo-super');
             saldoSuperEl.textContent = formatQ(diffSuper);
             saldoSuperEl.className = `text-xl font-bold font-mono ${diffSuper >= 0 ? 'text-[#86EFAC]' : 'text-[#F87171]'}`;
+
             const totalIngresos = (appData.config.andres || 0) + (appData.config.adriana || 0);
+            
+            // EL SÚPER SE IGNORA CONTABLEMENTE EN LA LIQUIDEZ GLOBAL
             const saldoTotal = totalIngresos - realGeneral;
+            
             const saldoTotalEl = document.getElementById('saldo-total');
             saldoTotalEl.textContent = formatQ(saldoTotal);
             saldoTotalEl.className = `text-xl font-bold font-mono ${saldoTotal >= 0 ? 'text-[#86EFAC]' : 'text-[#F87171]'}`;
+            
+            const btnSuper = document.getElementById('tab-super');
+            if(!appData.config.superActivo) btnSuper.classList.add('tab-disabled');
+            else btnSuper.classList.remove('tab-disabled');
         }
 
         function renderLists() {
             const container = document.getElementById('lists-container');
             container.innerHTML = '';
+            
             if (activeTab === 'super' && !appData.config.superActivo) {
-                container.innerHTML = `<div class="md3-card p-10 text-center border border-[#4A4458] border-dashed"><span class="material-symbols-outlined text-5xl text-[#938F99] mb-4">shopping_cart_off</span><h3 class="text-[#E6E1E5] font-bold text-lg">Súper Deshabilitado</h3><p class="text-[#938F99] text-sm">Activa el switch para planificar el súper.</p></div>`;
+                container.innerHTML = `
+                <div class="md3-card p-8 text-center border border-[#4A4458] border-dashed">
+                    <span class="material-symbols-outlined text-4xl text-[#938F99] mb-2">shopping_cart_off</span>
+                    <h3 class="text-[#E6E1E5] font-bold">Súper Deshabilitado</h3>
+                    <p class="text-sm text-[#938F99] mt-2">Esta sección está apagada para la quincena actual. Enciéndela en el panel de control superior si necesitas utilizarla como guía de supermercado.</p>
+                </div>`;
                 return;
             }
+
             const hideBought = document.getElementById('toggle-pendientes').checked;
+            
             Object.keys(appData[activeTab]).forEach(cat => {
                 const conf = categoryStyles[cat] || { title: cat, icon: 'list', color: '#fff' };
-                let subtotalReal = 0; appData[activeTab][cat].forEach(i => subtotalReal += i.actual);
-                let catHTML = `<div class="md3-card overflow-hidden border border-[#4A4458] shadow-lg"><div class="p-4 flex items-center justify-between border-b border-[#4A4458] bg-[#36343B]"><div class="flex items-center gap-2"><span class="material-symbols-outlined" style="color: ${conf.color}">${conf.icon}</span><h3 class="font-bold text-[#E6E1E5]">${conf.title}</h3></div><span class="text-sm font-black font-mono text-[#D0BCFF] bg-[#2B2930] px-2 py-1 rounded-lg">${formatQ(subtotalReal)}</span></div><div class="p-2 space-y-1">`;
+                let subtotalReal = 0;
+                appData[activeTab][cat].forEach(i => subtotalReal += i.actual);
+
+                let catHTML = `
+                <div class="md3-card overflow-hidden">
+                    <div class="p-4 flex items-center justify-between border-b border-[#4A4458] bg-[#36343B]">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined" style="color: ${conf.color}">${conf.icon}</span>
+                            <h3 class="font-semibold text-[#E6E1E5]">${conf.title}</h3>
+                        </div>
+                        <span class="text-sm font-bold font-mono text-[#D0BCFF]">${formatQ(subtotalReal)}</span>
+                    </div>
+                    <div class="p-2 space-y-1">`;
+                
                 appData[activeTab][cat].forEach((item, index) => {
                     if (hideBought && item.checked) return;
-                    catHTML += `<div class="flex items-center gap-2 p-3 bg-[#1C1B1F] rounded-xl border border-transparent focus-within:border-[#4A4458] transition-all"><input type="checkbox" class="md3-checkbox shrink-0" ${item.checked ? 'checked' : ''} onchange="toggleCheck('${activeTab}', '${cat}', ${index})"><div class="flex-1 min-w-0"><p class="text-sm font-semibold truncate ${item.checked ? 'item-checked' : ''}">${item.nombre}</p><p class="text-[10px] text-[#CAC4D0] font-mono">P: ${formatQ(item.budget)}</p></div><div class="flex flex-col w-20"><input type="number" step="0.01" value="${item.actual === 0 ? '' : item.actual}" placeholder="0.00" class="md3-input p-1.5" onchange="updateActual('${activeTab}', '${cat}', ${index}, this.value)"></div><button onclick="deleteItem('${activeTab}', '${cat}', ${index})" class="p-2 ml-1 text-[#938F99] hover:text-[#F87171] transition-colors"><span class="material-symbols-outlined text-[20px]">delete</span></button></div>`;
+                    catHTML += `
+                        <div class="flex items-center gap-2 p-3 bg-[#1C1B1F] rounded-xl border border-transparent focus-within:border-[#4A4458] transition-colors">
+                            <input type="checkbox" class="md3-checkbox shrink-0" ${item.checked ? 'checked' : ''} 
+                                onchange="toggleCheck('${activeTab}', '${cat}', ${index})">
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium truncate ${item.checked ? 'item-checked' : ''}">${item.nombre}</p>
+                                <p class="text-[10px] text-[#CAC4D0]">P: ${formatQ(item.budget)}</p>
+                            </div>
+                            <div class="flex flex-col w-16">
+                                <input type="number" step="0.01" value="${item.actual === 0 ? '' : item.actual}" placeholder="0.00"
+                                    class="md3-input p-1" onchange="updateActual('${activeTab}', '${cat}', ${index}, this.value)">
+                            </div>
+                            <button onclick="deleteItem('${activeTab}', '${cat}', ${index})" class="p-2 ml-1 text-[#938F99] hover:text-[#F87171] bg-transparent transition-colors rounded-lg flex items-center justify-center">
+                                <span class="material-symbols-outlined text-[20px]">delete</span>
+                            </button>
+                        </div>`;
                 });
-                catHTML += `<form onsubmit="addItem(event, '${activeTab}', '${cat}')" class="flex gap-2 p-3 mt-3 bg-[#36343B] rounded-xl border border-[#4A4458] border-dashed"><input type="text" name="nombre" placeholder="Nuevo..." required class="md3-input md3-input-text flex-1 text-sm bg-[#1C1B1F]"><input type="number" step="0.01" name="budget" placeholder="Q" class="md3-input w-20 text-sm bg-[#1C1B1F]"><button type="submit" class="bg-[#4A4458] text-[#D0BCFF] px-3 rounded-xl hover:bg-[#D0BCFF] hover:text-[#381E72] transition-colors"><span class="material-symbols-outlined text-sm">add</span></button></form></div></div>`;
+                
+                catHTML += `
+                    <form onsubmit="addItem(event, '${activeTab}', '${cat}')" class="flex gap-2 p-2 mt-2 bg-[#36343B] rounded-lg border border-[#4A4458] border-dashed">
+                        <input type="text" name="nombre" placeholder="Nuevo artículo..." required class="md3-input md3-input-text flex-1 text-sm p-2 bg-[#1C1B1F]">
+                        <input type="number" step="0.01" name="budget" placeholder="Presup." class="md3-input w-20 text-sm p-2 bg-[#1C1B1F]">
+                        <button type="submit" class="bg-[#4A4458] text-[#D0BCFF] px-3 rounded-lg hover:bg-[#D0BCFF] hover:text-[#381E72] transition-colors">
+                            <span class="material-symbols-outlined text-sm">add</span>
+                        </button>
+                    </form>
+                </div></div>`;
+                
                 container.innerHTML += catHTML;
             });
         }
@@ -283,126 +363,152 @@
         function toggleCheck(vista, cat, index) { 
             let item = appData[vista][cat][index];
             item.checked = !item.checked; 
-            if (item.checked && item.actual === 0) item.actual = item.budget;
-            else if (!item.checked) item.actual = 0;
-            saveLocal(); renderLists(); 
+            
+            if (item.checked) {
+                if (item.actual === 0) {
+                    item.actual = item.budget;
+                }
+            } else {
+                item.actual = 0;
+            }
+            
+            saveLocal(); 
+            renderLists(); 
         }
         
         function updateActual(vista, cat, index, value) { 
             let val = parseFloat(value);
             appData[vista][cat][index].actual = isNaN(val) ? 0 : val;
-            appData[vista][cat][index].checked = (appData[vista][cat][index].actual > 0);
+            if(appData[vista][cat][index].actual > 0) appData[vista][cat][index].checked = true;
+            if(appData[vista][cat][index].actual === 0) appData[vista][cat][index].checked = false;
             saveLocal(); renderLists(); 
         }
 
         function addItem(e, vista, cat) {
-            e.preventDefault(); const form = e.target;
-            const nombre = form.nombre.value.trim(); const budget = parseFloat(form.budget.value) || 0;
-            if(nombre) { appData[vista][cat].push({ id: 'n_' + Date.now(), nombre, budget, actual: 0, checked: false }); saveLocal(); renderLists(); }
+            e.preventDefault();
+            const form = e.target;
+            const nombre = form.nombre.value.trim();
+            const budget = parseFloat(form.budget.value) || 0;
+            if(nombre) {
+                appData[vista][cat].push({ id: 'n_' + Date.now(), nombre: nombre, budget: budget, actual: 0, checked: false });
+                saveLocal(); renderLists();
+            }
         }
 
         function deleteItem(vista, cat, index) {
-            if(confirm("¿Eliminar artículo?")) { appData[vista][cat].splice(index, 1); saveLocal(); renderLists(); }
-        }
-
-        // LÓGICA DE ESCANEO DE FACTURAS
-        function procesarArchivoFactura(e) {
-            const file = e.target.files[0]; if(!file) return;
-            document.getElementById('loader-factura').classList.remove('hidden');
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const base64Data = event.target.result.split(',')[1];
-                enviarFacturaGemini(file.name, file.type, base64Data);
-            };
-            reader.readAsDataURL(file); e.target.value = ''; 
-        }
-
-        async function enviarFacturaGemini(fileName, mimeType, base64Data) {
-            const payload = { tipo: "upload_factura", fileName, mimeType, base64Data };
-            try {
-                const response = await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify(payload),
-                    redirect: 'follow' 
-                });
-                const responseText = await response.text();
-                document.getElementById('loader-factura').classList.add('hidden');
-                try {
-                    const result = JSON.parse(responseText);
-                    if(result.status === "error") { alert("Error IA: " + result.message); return; }
-                    facturaUrlTemporal = result.fileUrl; facturaDataTemporal = result.productos;
-                    renderModalFactura();
-                } catch(e) { alert("Respuesta inválida: " + responseText.substring(0, 100)); }
-            } catch (error) { document.getElementById('loader-factura').classList.add('hidden'); alert("Fallo de red"); }
-        }
-
-        function renderModalFactura() {
-            const list = document.getElementById('modal-productos-list');
-            list.innerHTML = '';
-            facturaDataTemporal.forEach((prod, index) => {
-                list.innerHTML += `<div class="bg-[#36343B] p-3 rounded-xl border border-[#4A4458] relative" id="modal-item-${index}"><button onclick="eliminarItemModal(${index})" class="absolute top-2 right-2 text-[#938F99]"><span class="material-symbols-outlined text-sm">close</span></button><input type="text" id="modal-nombre-${index}" value="${prod.nombre}" class="bg-transparent border-b border-[#4A4458] text-[#E6E1E5] text-sm w-11/12 outline-none mb-2 focus:border-[#D0BCFF]"><div class="flex gap-2"><select id="modal-cat-${index}" class="bg-[#1C1B1F] text-[#CAC4D0] text-xs p-1 rounded border border-[#4A4458] outline-none"><option value="insumos" ${prod.categoria === 'insumos' ? 'selected' : ''}>Insumos</option><option value="comida" ${prod.categoria === 'comida' ? 'selected' : ''}>Comida</option><option value="casa" ${prod.categoria === 'casa' ? 'selected' : ''}>Casa</option></select><div class="flex items-center flex-1"><span class="text-[#938F99] text-xs mr-1">Q</span><input type="number" id="modal-precio-${index}" step="0.01" value="${prod.budget}" class="bg-[#1C1B1F] text-[#E6E1E5] text-xs p-1 rounded border border-[#4A4458] w-full text-right outline-none"></div></div></div>`;
-            });
-            document.getElementById('modal-factura').classList.remove('hidden');
-        }
-
-        function eliminarItemModal(i) { document.getElementById(`modal-item-${i}`).style.display = 'none'; facturaDataTemporal[i].borrado = true; }
-        function cerrarModalFactura() { document.getElementById('modal-factura').classList.add('hidden'); }
-
-        function aprobarInyeccionFactura() {
-            let count = 0;
-            facturaDataTemporal.forEach((prod, i) => {
-                if(prod.borrado) return;
-                const finalNombre = document.getElementById(`modal-nombre-${i}`).value;
-                const finalCat = document.getElementById(`modal-cat-${i}`).value;
-                const finalPrecio = parseFloat(document.getElementById(`modal-precio-${i}`).value) || 0;
-                appData.super[finalCat].push({ id: 'f_' + Date.now() + Math.random(), nombre: "*(FEL) " + finalNombre, budget: finalPrecio, actual: finalPrecio, checked: true });
-                count++;
-            });
-            if(facturaUrlTemporal) appData.facturasPendientes.push(facturaUrlTemporal);
-            saveLocal(); renderLists(); cerrarModalFactura(); showSnackbar(`${count} productos añadidos`);
+            if(confirm("¿Estás seguro de que deseas borrar permanentemente este artículo de tu plantilla?")) {
+                appData[vista][cat].splice(index, 1);
+                saveLocal(); renderLists();
+            }
         }
 
         function cerrarQuincena() {
-            if(!confirm("¿Deseas cerrar la quincena actual? Los artículos volverán a Q0.00.")) return;
-            let totalG = 0; Object.keys(appData.general).forEach(c => appData.general[c].forEach(i => totalG += i.actual));
+            if(!confirm("¿Seguro que deseas Cerrar la Quincena? \n\nTus ingresos y gastos volverán a Q0.00, pero todos los artículos nuevos quedarán guardados en tu plantilla para la siguiente quincena.")) return;
+
+            let totalG = 0;
+            Object.keys(appData.general).forEach(c => appData.general[c].forEach(i => totalG += i.actual));
+
             const totalIngresos = (appData.config.andres || 0) + (appData.config.adriana || 0);
-            const record = { id: Date.now(), fecha: new Date().toLocaleDateString('es-GT'), nombre: document.getElementById('budget-name').value || 'Quincena', ingresos: totalIngresos, gastos: totalG, ahorro: totalIngresos - totalG, facturas: [...appData.facturasPendientes] };
+
+            // EL SÚPER SE IGNORA CONTABLEMENTE EN EL HISTORIAL
+            const record = {
+                id: Date.now(),
+                fecha: new Date().toLocaleDateString('es-GT'),
+                nombre: document.getElementById('budget-name').value || 'Quincena',
+                ingresos: totalIngresos,
+                gastos: totalG,
+                ahorro: totalIngresos - totalG
+            };
+
             historyData.unshift(record);
-            ["general", "super"].forEach(v => Object.keys(appData[v]).forEach(c => appData[v][c].forEach(i => { i.actual = 0; i.checked = false; })));
-            appData.facturasPendientes = [];
-            saveLocal(); showSnackbar("Quincena cerrada"); switchTab('historial'); syncData(record);
+
+            Object.keys(appData.general).forEach(c => {
+                appData.general[c].forEach(item => { item.actual = 0; item.checked = false; });
+            });
+            if(appData.config.superActivo) {
+                Object.keys(appData.super).forEach(c => {
+                    appData.super[c].forEach(item => { item.actual = 0; item.checked = false; });
+                });
+            }
+
+            saveLocal();
+            document.getElementById('toggle-pendientes').checked = false;
+            showSnackbar("Quincena Cerrada y Guardada en Historial");
+            switchTab('historial');
+            syncData(record);
         }
 
         function renderHistorial() {
             const container = document.getElementById('historial-container');
-            container.innerHTML = historyData.length === 0 ? '<p class="text-center text-[#938F99] p-10">No hay registros aún.</p>' : '';
+            container.innerHTML = '';
+            if(historyData.length === 0) {
+                container.innerHTML = `<p class="text-center text-[#938F99]">Aún no hay quincenas cerradas.</p>`; return;
+            }
+
             historyData.forEach(h => {
-                let links = h.facturas ? h.facturas.map((u, i) => `<a href="${u}" target="_blank" class="text-[10px] text-[#D0BCFF] bg-[#381E72] px-2 py-1 rounded">Doc ${i+1}</a>`).join('') : '';
-                container.innerHTML += `<div class="md3-card p-4 border border-[#4A4458] shadow-md"><div class="flex justify-between items-start mb-2"><div><h4 class="font-bold text-[#E6E1E5]">${h.nombre}</h4><p class="text-[10px] text-[#938F99]">${h.fecha}</p></div><div class="text-right"><p class="font-mono font-bold ${h.ahorro >= 0 ? 'text-[#86EFAC]' : 'text-[#F87171]'}">${formatQ(h.ahorro)}</p></div></div><div class="flex justify-between text-xs"><span class="text-[#CAC4D0]">Ing: ${formatQ(h.ingresos)}</span><span class="text-[#F2B8B5]">Gas: ${formatQ(h.gastos)}</span></div><div class="mt-3 flex gap-2 overflow-x-auto">${links}</div></div>`;
+                container.innerHTML += `
+                <div class="md3-card p-4 border border-[#4A4458]">
+                    <div class="flex justify-between items-start border-b border-[#4A4458] pb-2 mb-2">
+                        <div>
+                            <h4 class="font-bold text-[#E6E1E5]">${h.nombre}</h4>
+                            <p class="text-xs text-[#938F99]">${h.fecha}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[10px] text-[#CAC4D0] uppercase">Sobrante</p>
+                            <p class="font-bold ${h.ahorro >= 0 ? 'text-[#86EFAC]' : 'text-[#F87171]'}">${formatQ(h.ahorro)}</p>
+                        </div>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-[#CAC4D0]">Ingresos: ${formatQ(h.ingresos)}</span>
+                        <span class="text-[#F2B8B5]">Gastos: ${formatQ(h.gastos)}</span>
+                    </div>
+                </div>`;
             });
         }
 
+        function showSnackbar(msg) {
+            const sb = document.getElementById("snackbar");
+            sb.textContent = msg; sb.className = "show";
+            setTimeout(() => { sb.className = sb.className.replace("show", ""); }, 3000);
+        }
+
+        window.onscroll = function() {
+            const fabUp = document.getElementById('fab-up');
+            if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) fabUp.classList.add('visible');
+            else fabUp.classList.remove('visible');
+        };
+
         async function syncData(cerrarRecord = null) {
+            if(GOOGLE_SCRIPT_URL === 'PEGAR_AQUI_TU_ENLACE') { showSnackbar("Configura la URL de Google"); return; }
             const icon = document.getElementById('fab-icon'), spinner = document.getElementById('fab-spinner');
             icon.style.display = 'none'; spinner.style.display = 'block';
+
             const dataToSync = JSON.parse(JSON.stringify(appData));
-            if(!appData.config.superActivo) delete dataToSync.super;
-            const payload = { tipo: cerrarRecord ? "cierre" : "sincronizacion", budgetName: document.getElementById('budget-name').value || 'Quincena', data: dataToSync, resumen: cerrarRecord };
+            if(!appData.config.superActivo) {
+                delete dataToSync.super; 
+            }
+
+            const payload = {
+                tipo: cerrarRecord ? "cierre" : "sincronizacion",
+                budgetName: document.getElementById('budget-name').value || 'Quincena',
+                data: dataToSync,
+                resumen: cerrarRecord
+            };
+
             try {
                 await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'text/plain' }, // CORREGIDO PARA EVITAR CORS
-                    body: JSON.stringify(payload),
-                    redirect: 'follow'
+                    method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
                 });
-                showSnackbar(cerrarRecord ? "Guardado en la nube" : "Sincronizado");
-            } catch (e) { showSnackbar("Error de sincronización"); } 
+                showSnackbar(cerrarRecord ? "Resumen enviado a Sheets" : "Sincronizado con Sheets");
+            } catch (error) { showSnackbar("Error de conexión"); } 
             finally { icon.style.display = 'block'; spinner.style.display = 'none'; }
         }
 
-        function showSnackbar(msg) { const sb = document.getElementById("snackbar"); sb.textContent = msg; sb.className = "show"; setTimeout(() => { sb.className = ""; }, 3000); }
-        window.onscroll = function() { const fabUp = document.getElementById('fab-up'); if (document.documentElement.scrollTop > 300) fabUp.classList.add('visible'); else fabUp.classList.remove('visible'); };
+        document.addEventListener('DOMContentLoaded', () => { 
+            switchTab('super'); 
+            updateLogic(); 
+        });
     </script>
 </body>
 </html>
