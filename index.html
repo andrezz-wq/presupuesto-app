@@ -565,33 +565,33 @@
                             let catTotal = 0;
                             
                             record.detalle[vista][cat].forEach(item => {
-                                if(item.actual > 0) {
-                                    itemsHtml += `
-                                        <div class="flex justify-between items-center py-2 border-b border-[#4A4458] border-dashed last:border-0">
-                                            <span class="text-[#E6E1E5] text-sm">${item.nombre}</span>
-                                            <span class="text-[#D0BCFF] font-mono text-sm">${formatQ(item.actual)}</span>
-                                        </div>`;
-                                    catTotal += item.actual;
-                                }
+                                const isZero = item.actual === 0;
+                                itemsHtml += `
+                                    <div class="flex justify-between items-center py-2 border-b border-[#4A4458] border-dashed last:border-0">
+                                        <div class="flex flex-col">
+                                            <span class="text-[#E6E1E5] text-sm ${item.checked ? 'item-checked' : ''}">${item.nombre}</span>
+                                            <span class="text-[10px] text-[#CAC4D0]">P: ${formatQ(item.budget)}</span>
+                                        </div>
+                                        <span class="font-mono text-sm ${isZero ? 'text-[#938F99]' : 'text-[#D0BCFF]'}">${formatQ(item.actual)}</span>
+                                    </div>`;
+                                catTotal += item.actual;
                             });
                             
-                            if(catTotal > 0) {
-                                html += `
-                                    <div class="mb-4 bg-[#2B2930] border border-[#4A4458] rounded-xl overflow-hidden">
-                                        <div class="bg-[#36343B] p-3 flex justify-between items-center">
-                                            <h4 class="font-semibold text-[#E6E1E5] capitalize text-sm">${cat.replace('_', ' ')}</h4>
-                                            <span class="text-[#86EFAC] font-bold text-sm">${formatQ(catTotal)}</span>
-                                        </div>
-                                        <div class="p-3 bg-[#1C1B1F]">
-                                            ${itemsHtml}
-                                        </div>
-                                    </div>`;
-                            }
+                            html += `
+                                <div class="mb-4 bg-[#2B2930] border border-[#4A4458] rounded-xl overflow-hidden">
+                                    <div class="bg-[#36343B] p-3 flex justify-between items-center">
+                                        <h4 class="font-semibold text-[#E6E1E5] capitalize text-sm">${cat.replace('_', ' ')}</h4>
+                                        <span class="text-[#86EFAC] font-bold text-sm">${formatQ(catTotal)}</span>
+                                    </div>
+                                    <div class="p-3 bg-[#1C1B1F]">
+                                        ${itemsHtml}
+                                    </div>
+                                </div>`;
                         });
                     }
                 });
                 
-                content.innerHTML = html || '<p class="text-center text-[#938F99] p-4">No se registró ningún gasto en esta quincena.</p>';
+                content.innerHTML = html || '<p class="text-center text-[#938F99] p-4">No hay datos en esta quincena.</p>';
             }
             
             document.getElementById('modal-detalle').classList.remove('hidden');
@@ -648,9 +648,14 @@
             const icon = document.getElementById('fab-icon'), spinner = document.getElementById('fab-spinner');
             icon.style.display = 'none'; spinner.style.display = 'block';
 
-            const dataToSync = JSON.parse(JSON.stringify(appData));
-            if(!appData.config.superActivo) {
-                delete dataToSync.super; 
+            let dataToSync;
+            if (cerrarRecord && cerrarRecord.detalle) {
+                dataToSync = JSON.parse(JSON.stringify(cerrarRecord.detalle));
+            } else {
+                dataToSync = JSON.parse(JSON.stringify(appData));
+                if(!appData.config.superActivo) {
+                    delete dataToSync.super; 
+                }
             }
 
             const payload = {
