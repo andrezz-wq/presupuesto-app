@@ -125,8 +125,24 @@
         <div class="md3-card p-6 border border-[#4A4458] text-center mb-6">
             <span class="material-symbols-outlined text-4xl text-[#D0BCFF] mb-2">history</span>
             <h2 class="text-xl font-bold text-[#E6E1E5]">Historial de Quincenas</h2>
+            <p class="text-sm text-[#938F99] mt-2">Puedes consultar detalles, editar o eliminar registros cerrados.</p>
         </div>
         <div id="historial-container" class="space-y-4"></div>
+    </div>
+
+    <!-- MODAL PARA VER DETALLE DE HISTORIAL -->
+    <div id="modal-detalle" class="fixed inset-0 bg-black/80 hidden z-[100] flex items-center justify-center p-4">
+        <div class="md3-card w-full max-w-lg max-h-[80vh] flex flex-col border border-[#4A4458]">
+            <div class="p-4 flex justify-between items-center border-b border-[#4A4458]">
+                <h3 id="modal-title" class="text-lg font-bold text-[#D0BCFF]">Detalle Quincena</h3>
+                <button onclick="cerrarModal()" class="text-[#CAC4D0] hover:text-white transition-colors bg-[#4A4458] p-1 rounded-lg">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div id="modal-content" class="p-4 overflow-y-auto space-y-4 flex-1">
+                <!-- Se inyecta por JS -->
+            </div>
+        </div>
     </div>
 
     <button id="fab-up" class="fab-up" onclick="window.scrollTo(0,0)">
@@ -410,14 +426,20 @@
 
             const totalIngresos = (appData.config.andres || 0) + (appData.config.adriana || 0);
 
-            // EL SÚPER SE IGNORA CONTABLEMENTE EN EL HISTORIAL
+            // CLONACIÓN PROFUNDA (DEEP COPY) PARA GUARDAR EL DESGLOSE DE GASTOS
+            const detalleCopia = JSON.parse(JSON.stringify({
+                general: appData.general,
+                super: appData.config.superActivo ? appData.super : null
+            }));
+
             const record = {
                 id: Date.now(),
                 fecha: new Date().toLocaleDateString('es-GT'),
                 nombre: document.getElementById('budget-name').value || 'Quincena',
                 ingresos: totalIngresos,
                 gastos: totalG,
-                ahorro: totalIngresos - totalG
+                ahorro: totalIngresos - totalG,
+                detalle: detalleCopia // EL DESGLOSE SE GUARDA AQUÍ
             };
 
             historyData.unshift(record);
@@ -447,23 +469,136 @@
 
             historyData.forEach(h => {
                 container.innerHTML += `
-                <div class="md3-card p-4 border border-[#4A4458]">
+                <div class="md3-card p-4 border border-[#4A4458] flex flex-col">
                     <div class="flex justify-between items-start border-b border-[#4A4458] pb-2 mb-2">
                         <div>
-                            <h4 class="font-bold text-[#E6E1E5]">${h.nombre}</h4>
+                            <h4 class="font-bold text-[#E6E1E5] text-lg">${h.nombre}</h4>
                             <p class="text-xs text-[#938F99]">${h.fecha}</p>
                         </div>
                         <div class="text-right">
-                            <p class="text-[10px] text-[#CAC4D0] uppercase">Sobrante</p>
-                            <p class="font-bold ${h.ahorro >= 0 ? 'text-[#86EFAC]' : 'text-[#F87171]'}">${formatQ(h.ahorro)}</p>
+                            <p class="text-[10px] text-[#CAC4D0] uppercase font-bold">Sobrante</p>
+                            <p class="font-bold text-lg ${h.ahorro >= 0 ? 'text-[#86EFAC]' : 'text-[#F87171]'}">${formatQ(h.ahorro)}</p>
                         </div>
                     </div>
-                    <div class="flex justify-between text-sm">
+                    <div class="flex justify-between text-sm mb-4">
                         <span class="text-[#CAC4D0]">Ingresos: ${formatQ(h.ingresos)}</span>
                         <span class="text-[#F2B8B5]">Gastos: ${formatQ(h.gastos)}</span>
                     </div>
+                    <div class="flex gap-2">
+                        <button onclick="verDetalle(${h.id})" class="flex-1 bg-[#4A4458] text-[#D0BCFF] py-2 rounded-lg text-sm font-semibold flex justify-center items-center gap-1 hover:bg-[#D0BCFF] hover:text-[#381E72] transition-colors">
+                            <span class="material-symbols-outlined text-[18px]">visibility</span> Ver
+                        </button>
+                        <button onclick="restaurarQuincena(${h.id})" class="flex-1 bg-[#4A4458] text-[#D0BCFF] py-2 rounded-lg text-sm font-semibold flex justify-center items-center gap-1 hover:bg-[#D0BCFF] hover:text-[#381E72] transition-colors">
+                            <span class="material-symbols-outlined text-[18px]">edit</span> Editar
+                        </button>
+                        <button onclick="borrarQuincena(${h.id})" class="w-10 bg-transparent border border-[#F87171] text-[#F87171] py-2 rounded-lg flex justify-center items-center hover:bg-[#F87171] hover:text-white transition-colors">
+                            <span class="material-symbols-outlined text-[18px]">delete</span>
+                        </button>
+                    </div>
                 </div>`;
             });
+        }
+
+        // --- NUEVAS FUNCIONES DE HISTORIAL ---
+
+        function borrarQuincena(id) {
+            if(!confirm("¿ESTÁS SEGURO? \n\nSe borrará permanentemente este registro del historial. Esta acción no se puede deshacer.")) return;
+            
+            historyData = historyData.filter(h => h.id !== id);
+            saveLocal();
+            renderHistorial();
+            syncData();
+            showSnackbar("Registro eliminado del historial");
+        }
+
+        function restaurarQuincena(id) {
+            if(!confirm("⚠️ ADVERTENCIA CRÍTICA: \n\nAl editar una quincena pasada, ésta sobreescribirá tu plantilla actual. Perderás cualquier cambio o gasto que no hayas cerrado en la quincena en curso. \n\n¿Estás seguro de continuar?")) return;
+            
+            const record = historyData.find(h => h.id === id);
+            
+            if(!record.detalle) {
+                alert("ERROR: Este es un registro antiguo. La captura detallada de los datos no existe para esta quincena, por lo que no puede ser restaurada.");
+                return;
+            }
+
+            // Sobrescribir datos en memoria con la captura guardada
+            appData.general = record.detalle.general;
+            if (record.detalle.super) {
+                appData.super = record.detalle.super;
+                appData.config.superActivo = true;
+            } else {
+                appData.config.superActivo = false;
+            }
+            
+            document.getElementById('budget-name').value = record.nombre;
+            
+            // Eliminar del historial para evitar duplicación tras volver a cerrar
+            historyData = historyData.filter(h => h.id !== id);
+            
+            saveLocal();
+            document.getElementById('toggle-super-activo').checked = appData.config.superActivo;
+            switchTab('general'); // Cambiar a pestaña general como confirmación visual
+            syncData();
+            showSnackbar("Quincena restaurada en el panel activo");
+        }
+
+        function verDetalle(id) {
+            const record = historyData.find(h => h.id === id);
+            const content = document.getElementById('modal-content');
+            document.getElementById('modal-title').textContent = record.nombre + " - Desglose";
+            
+            if(!record.detalle) {
+                content.innerHTML = `
+                <div class="text-center p-6 bg-[#36343B] rounded-xl border border-[#4A4458] border-dashed">
+                    <span class="material-symbols-outlined text-4xl text-[#938F99] mb-2">history_toggle_off</span>
+                    <p class="text-[#E6E1E5] font-semibold">Registro Antiguo</p>
+                    <p class="text-sm text-[#938F99] mt-2">Esta quincena fue guardada en una versión anterior de la app. El desglose ítem por ítem no está disponible.</p>
+                </div>`;
+            } else {
+                let html = '';
+                const vistas = ['general', 'super'];
+                
+                vistas.forEach(vista => {
+                    if(record.detalle[vista]) {
+                        Object.keys(record.detalle[vista]).forEach(cat => {
+                            let itemsHtml = '';
+                            let catTotal = 0;
+                            
+                            record.detalle[vista][cat].forEach(item => {
+                                if(item.actual > 0) {
+                                    itemsHtml += `
+                                        <div class="flex justify-between items-center py-2 border-b border-[#4A4458] border-dashed last:border-0">
+                                            <span class="text-[#E6E1E5] text-sm">${item.nombre}</span>
+                                            <span class="text-[#D0BCFF] font-mono text-sm">${formatQ(item.actual)}</span>
+                                        </div>`;
+                                    catTotal += item.actual;
+                                }
+                            });
+                            
+                            if(catTotal > 0) {
+                                html += `
+                                    <div class="mb-4 bg-[#2B2930] border border-[#4A4458] rounded-xl overflow-hidden">
+                                        <div class="bg-[#36343B] p-3 flex justify-between items-center">
+                                            <h4 class="font-semibold text-[#E6E1E5] capitalize text-sm">${cat.replace('_', ' ')}</h4>
+                                            <span class="text-[#86EFAC] font-bold text-sm">${formatQ(catTotal)}</span>
+                                        </div>
+                                        <div class="p-3 bg-[#1C1B1F]">
+                                            ${itemsHtml}
+                                        </div>
+                                    </div>`;
+                            }
+                        });
+                    }
+                });
+                
+                content.innerHTML = html || '<p class="text-center text-[#938F99] p-4">No se registró ningún gasto en esta quincena.</p>';
+            }
+            
+            document.getElementById('modal-detalle').classList.remove('hidden');
+        }
+
+        function cerrarModal() {
+            document.getElementById('modal-detalle').classList.add('hidden');
         }
 
         function showSnackbar(msg) {
@@ -478,7 +613,6 @@
             else fabUp.classList.remove('visible');
         };
 
-        // ---> NUEVA FUNCIÓN DE DESCARGA GLOBAL <---
         async function descargarDatosNube() {
             if(!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === 'PEGAR_AQUI_TU_ENLACE') return;
             
@@ -490,9 +624,7 @@
                 const result = await response.json();
                 
                 if (result.status === "success" && result.data) {
-                    // Carga el estado activo
                     if(result.data.app) appData = result.data.app;
-                    // Carga el historial
                     if(result.data.history) historyData = result.data.history;
                     
                     saveLocal();
@@ -511,7 +643,6 @@
             }
         }
 
-        // ---> FUNCIÓN DE SINCRONIZACIÓN ACTUALIZADA <---
         async function syncData(cerrarRecord = null) {
             if(!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === 'PEGAR_AQUI_TU_ENLACE') { showSnackbar("Configura la URL de Google"); return; }
             const icon = document.getElementById('fab-icon'), spinner = document.getElementById('fab-spinner');
@@ -526,7 +657,7 @@
                 tipo: cerrarRecord ? "cierre" : "sincronizacion",
                 budgetName: document.getElementById('budget-name').value || 'Quincena',
                 data: dataToSync,
-                history: historyData, // SE ENVÍA EL HISTORIAL A LA NUBE
+                history: historyData, 
                 resumen: cerrarRecord
             };
 
@@ -543,7 +674,7 @@
         document.addEventListener('DOMContentLoaded', () => { 
             switchTab('super'); 
             updateLogic(); 
-            descargarDatosNube(); // INICIA DESCARGA AL CARGAR LA APP
+            descargarDatosNube(); 
         });
     </script>
 </body>
