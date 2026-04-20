@@ -217,9 +217,11 @@
         let historyData = JSON.parse(localStorage.getItem('budgetHistory_v2')) || [];
         let activeTab = 'super';
 
+        // --- SALVAGUARDAS DE INTEGRIDAD DE DATOS ---
         if(!appData.config) appData.config = defaultData.config;
         if(appData.config.superActivo === undefined) appData.config.superActivo = true;
-        if(!appData.general.transferencias) appData.general = defaultData.general;
+        if(!appData.general) appData.general = defaultData.general;
+        if(!appData.super) appData.super = defaultData.super; // PREVIENE CRASH SI FUE BORRADO
 
         document.getElementById('ingreso-andres').value = appData.config.andres;
         document.getElementById('ingreso-adriana').value = appData.config.adriana;
@@ -499,8 +501,6 @@
             });
         }
 
-        // --- NUEVAS FUNCIONES DE HISTORIAL ---
-
         function borrarQuincena(id) {
             if(!confirm("¿ESTÁS SEGURO? \n\nSe borrará permanentemente este registro del historial. Esta acción no se puede deshacer.")) return;
             
@@ -521,23 +521,21 @@
                 return;
             }
 
-            // Sobrescribir datos en memoria con la captura guardada
             appData.general = record.detalle.general;
             if (record.detalle.super) {
                 appData.super = record.detalle.super;
                 appData.config.superActivo = true;
             } else {
+                appData.super = defaultData.super; // PREVIENE CRASH
                 appData.config.superActivo = false;
             }
             
             document.getElementById('budget-name').value = record.nombre;
-            
-            // Eliminar del historial para evitar duplicación tras volver a cerrar
             historyData = historyData.filter(h => h.id !== id);
             
             saveLocal();
             document.getElementById('toggle-super-activo').checked = appData.config.superActivo;
-            switchTab('general'); // Cambiar a pestaña general como confirmación visual
+            switchTab('general'); 
             syncData();
             showSnackbar("Quincena restaurada en el panel activo");
         }
@@ -556,10 +554,19 @@
                 </div>`;
             } else {
                 let html = '';
-                const vistas = ['general', 'super'];
                 
-                vistas.forEach(vista => {
+                // Mapeo ordenado para visualización explícita
+                const configuracionVistas = [
+                    { key: 'general', title: '💳 GENERALES' },
+                    { key: 'super', title: '🛒 SÚPER / CASA' }
+                ];
+                
+                configuracionVistas.forEach(vistaObj => {
+                    const vista = vistaObj.key;
+                    
                     if(record.detalle[vista]) {
+                        html += `<h4 class="text-sm font-bold text-[#D0BCFF] uppercase mt-4 mb-2 tracking-widest border-b border-[#4A4458] pb-1">${vistaObj.title}</h4>`;
+                        
                         Object.keys(record.detalle[vista]).forEach(cat => {
                             let itemsHtml = '';
                             let catTotal = 0;
@@ -624,7 +631,13 @@
                 const result = await response.json();
                 
                 if (result.status === "success" && result.data) {
-                    if(result.data.app) appData = result.data.app;
+                    if(result.data.app) {
+                        appData = result.data.app;
+                        // RESTAURACIÓN FORZADA DE INTEGRIDAD
+                        if(!appData.config) appData.config = defaultData.config;
+                        if(!appData.general) appData.general = defaultData.general;
+                        if(!appData.super) appData.super = defaultData.super;
+                    }
                     if(result.data.history) historyData = result.data.history;
                     
                     saveLocal();
@@ -648,15 +661,8 @@
             const icon = document.getElementById('fab-icon'), spinner = document.getElementById('fab-spinner');
             icon.style.display = 'none'; spinner.style.display = 'block';
 
-            let dataToSync;
-            if (cerrarRecord && cerrarRecord.detalle) {
-                dataToSync = JSON.parse(JSON.stringify(cerrarRecord.detalle));
-            } else {
-                dataToSync = JSON.parse(JSON.stringify(appData));
-                if(!appData.config.superActivo) {
-                    delete dataToSync.super; 
-                }
-            }
+            // NO BORRAR dataToSync.super BAJO NINGUNA CIRCUNSTANCIA
+            const dataToSync = JSON.parse(JSON.stringify(appData));
 
             const payload = {
                 tipo: cerrarRecord ? "cierre" : "sincronizacion",
