@@ -478,6 +478,33 @@
             else fabUp.classList.remove('visible');
         };
 
+        async function descargarDatosNube() {
+            if(GOOGLE_SCRIPT_URL === 'PEGAR_AQUI_TU_ENLACE') return;
+            
+            const icon = document.getElementById('fab-icon'), spinner = document.getElementById('fab-spinner');
+            icon.style.display = 'none'; spinner.style.display = 'block';
+
+            try {
+                const response = await fetch(GOOGLE_SCRIPT_URL);
+                const result = await response.json();
+                
+                if (result.status === "success" && result.data) {
+                    appData = result.data;
+                    saveLocal();
+                    
+                    if (activeTab === 'super') renderLists(); 
+                    if (activeTab === 'general') renderLists();
+                    
+                    showSnackbar("Datos sincronizados desde la nube");
+                }
+            } catch (error) {
+                console.error("Error de descarga:", error);
+                showSnackbar("Usando memoria local (Sin conexión)");
+            } finally {
+                icon.style.display = 'block'; spinner.style.display = 'none';
+            }
+        }
+
         async function syncData(cerrarRecord = null) {
             if(GOOGLE_SCRIPT_URL === 'PEGAR_AQUI_TU_ENLACE') { showSnackbar("Configura la URL de Google"); return; }
             const icon = document.getElementById('fab-icon'), spinner = document.getElementById('fab-spinner');
@@ -508,6 +535,7 @@
         document.addEventListener('DOMContentLoaded', () => { 
             switchTab('super'); 
             updateLogic(); 
+            descargarDatosNube();
         });
     </script>
 </body>
