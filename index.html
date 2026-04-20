@@ -478,22 +478,28 @@
             else fabUp.classList.remove('visible');
         };
 
+        // ---> NUEVA FUNCIÓN DE DESCARGA GLOBAL <---
         async function descargarDatosNube() {
-            if(GOOGLE_SCRIPT_URL === 'PEGAR_AQUI_TU_ENLACE') return;
+            if(!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === 'PEGAR_AQUI_TU_ENLACE') return;
             
             const icon = document.getElementById('fab-icon'), spinner = document.getElementById('fab-spinner');
             icon.style.display = 'none'; spinner.style.display = 'block';
 
             try {
-                const response = await fetch(GOOGLE_SCRIPT_URL);
+                const response = await fetch(GOOGLE_SCRIPT_URL, { redirect: "follow" });
                 const result = await response.json();
                 
                 if (result.status === "success" && result.data) {
-                    appData = result.data;
+                    // Carga el estado activo
+                    if(result.data.app) appData = result.data.app;
+                    // Carga el historial
+                    if(result.data.history) historyData = result.data.history;
+                    
                     saveLocal();
                     
                     if (activeTab === 'super') renderLists(); 
                     if (activeTab === 'general') renderLists();
+                    if (activeTab === 'historial') renderHistorial();
                     
                     showSnackbar("Datos sincronizados desde la nube");
                 }
@@ -505,8 +511,9 @@
             }
         }
 
+        // ---> FUNCIÓN DE SINCRONIZACIÓN ACTUALIZADA <---
         async function syncData(cerrarRecord = null) {
-            if(GOOGLE_SCRIPT_URL === 'PEGAR_AQUI_TU_ENLACE') { showSnackbar("Configura la URL de Google"); return; }
+            if(!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === 'PEGAR_AQUI_TU_ENLACE') { showSnackbar("Configura la URL de Google"); return; }
             const icon = document.getElementById('fab-icon'), spinner = document.getElementById('fab-spinner');
             icon.style.display = 'none'; spinner.style.display = 'block';
 
@@ -519,6 +526,7 @@
                 tipo: cerrarRecord ? "cierre" : "sincronizacion",
                 budgetName: document.getElementById('budget-name').value || 'Quincena',
                 data: dataToSync,
+                history: historyData, // SE ENVÍA EL HISTORIAL A LA NUBE
                 resumen: cerrarRecord
             };
 
@@ -535,7 +543,7 @@
         document.addEventListener('DOMContentLoaded', () => { 
             switchTab('super'); 
             updateLogic(); 
-            descargarDatosNube();
+            descargarDatosNube(); // INICIA DESCARGA AL CARGAR LA APP
         });
     </script>
 </body>
